@@ -1,4 +1,4 @@
-const CACHE='pathfinder-v099';
+const CACHE='pathfinder-v0910';
 const ASSETS=['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(ASSETS.map(p=>new Request(p,{cache:'reload'})));await self.skipWaiting();})()));
 self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')self.skipWaiting()});
