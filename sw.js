@@ -1,6 +1,7 @@
-const CACHE='pathfinder-v0912';
-const ASSETS=['./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
-self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);await c.addAll(ASSETS.map(p=>new Request(p,{cache:'reload'})));await self.skipWaiting();})()));
-self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')self.skipWaiting()});
+const CACHE='pathfinder-v0913';
+const ASSETS=["index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "style-913.css", "app-913.js", "core-913.js", "storage-913.js", "crypto-913.js", "reports-913.js", "update-913.js"];
+const urls=new Set(ASSETS.map(p=>new URL(p,self.registration.scope).href));
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);try{await c.addAll(ASSETS.map(p=>new Request(new URL(p,self.registration.scope),{cache:'reload'})))}catch(err){await caches.delete(CACHE);throw err}})()));
+self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')e.waitUntil(self.skipWaiting())});
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('pathfinder-')&&k!==CACHE)await caches.delete(k);await self.clients.claim()})()));
-self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET'||u.origin!==location.origin)return;if(u.pathname.endsWith('/version.json')||u.pathname.endsWith('/sw.js')){e.respondWith(fetch(r,{cache:'no-store'}));return}if(r.mode==='navigate'){e.respondWith((async()=>{const c=await caches.open(CACHE);try{const res=await fetch(r,{cache:'no-store'});if(!res.ok)throw Error('HTTP');await c.put('./index.html',res.clone());return res}catch{return (await c.match('./index.html'))||Response.error()}})());return}e.respondWith((async()=>{const c=await caches.open(CACHE);return (await c.match(r))||fetch(r)})())});
+self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET'||u.origin!==location.origin)return;if(u.pathname.endsWith('/version.json')||u.pathname.endsWith('/sw.js')){e.respondWith(fetch(r,{cache:'no-store'}));return}if(r.mode==='navigate'&&(u.pathname===new URL(self.registration.scope).pathname||u.pathname===new URL('index.html',self.registration.scope).pathname)){e.respondWith((async()=>{const c=await caches.open(CACHE);return (await c.match(new URL('index.html',self.registration.scope)))||Response.error()})());return}if(urls.has(u.href))e.respondWith((async()=>{const c=await caches.open(CACHE);return (await c.match(r))||fetch(r)})())});
