@@ -1,0 +1,9 @@
+
+const backupLimit=10000000, backupRounds=600000, backupSchema='pathfinder-encrypted-v1';
+const b64=a=>{let out='';for(let i=0;i<a.length;i+=8192)out+=String.fromCharCode(...a.subarray(i,i+8192));return btoa(out)};
+function unb64(s,max){if(typeof s!=='string'||s.length>Math.ceil(max/3)*4||!/^[A-Za-z0-9+/]*={0,2}$/.test(s))throw Error('base64');let a=Uint8Array.from(atob(s),c=>c.charCodeAt(0));if(a.length>max)throw Error('size');return a}
+async function backupKey(password,salt){let base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:backupRounds,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function encryptBackup(d,password){let plain=new TextEncoder().encode(JSON.stringify(d));if(plain.length>backupLimit)throw Error('size');let salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),k=await backupKey(password,salt);let cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(backupSchema)},k,plain);return {schema:backupSchema,iterations:backupRounds,salt:b64(salt),iv:b64(iv),cipher:b64(new Uint8Array(cipher))}}
+async function decryptBackup(d,password){if(d.schema!==backupSchema||d.iterations!==backupRounds)throw Error('format');let salt=unb64(d.salt,16),iv=unb64(d.iv,12),cipher=unb64(d.cipher,backupLimit+16);if(salt.length!==16||iv.length!==12||cipher.length<16)throw Error('format');let k=await backupKey(password,salt);return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(backupSchema)},k,cipher)))}
+
+export { backupLimit, backupSchema, encryptBackup, decryptBackup };
