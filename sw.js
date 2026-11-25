@@ -1,5 +1,5 @@
-const CACHE='pathfinder-v0917';
-const ASSETS=["index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "style-917.css", "app-917.js", "core-917.js", "storage-917.js", "crypto-917.js", "reports-917.js", "update-917.js", "archive-917.js", "art-917.js", "guild-917.js"];
+const CACHE='pathfinder-v0918';
+const ASSETS=["index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "style-918.css", "app-918.js", "core-918.js", "storage-918.js", "crypto-918.js", "reports-918.js", "update-918.js", "archive-918.js", "art-918.js", "guild-918.js", "chronicle-918.js"];
 const urls=new Set(ASSETS.map(p=>new URL(p,self.registration.scope).href));
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE);try{await c.addAll(ASSETS.map(p=>new Request(new URL(p,self.registration.scope),{cache:'reload'})))}catch(err){await caches.delete(CACHE);throw err}})()));
 self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')e.waitUntil(self.skipWaiting())});
