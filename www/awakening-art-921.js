@@ -1,4 +1,4 @@
-const themes=new Set(['hall','market','sanctuary','archive','road','chamber','guild']);
+const themes=new Set(['hall','market','sanctuary','archive','road','chamber','guild','village']);
 const painted=new Set(['kael','rovan','oracle','edran']);
 const portraits=new Set(['kael','rovan','oracle','edran','silas','morrigan','alden']);
 export function sceneArtwork(theme,portrait){const stage=document.createElement('div');stage.className='vn-stage awakening-stage';stage.dataset.art=themes.has(theme)?theme:'hall';stage.setAttribute('aria-hidden','true');if(portraits.has(portrait)){const img=document.createElement('img');img.className='awakening-portrait';img.src=painted.has(portrait)?'./living-art/'+portrait+'.webp':'./awakening-art/'+portrait+'.svg';if(painted.has(portrait))img.classList.add('living-portrait');img.alt='';stage.append(img)}const air=document.createElement('div');air.className='living-weather';stage.append(air);return stage}

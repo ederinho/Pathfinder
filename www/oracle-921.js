@@ -14,7 +14,7 @@ export function normalizeOracle(d){
  const s=o.session;if(s!==null){if(!s||!id(s.id)||!time(s.started)||typeof s.closed!=='boolean'||!Array.isArray(s.turns)||s.turns.length>ORACLE_MAX||!s.turns.every(validTurn)||typeof s.campaignSaved!=='boolean'||(s.turns.length>0)!==ids.has(s.id))fail();}
  return o;
 }
-export function offerOracle(d,shards,t=Date.now()){const week=weekKey(t),free=!d.oracle.receipts.some(r=>r.week===week&&r.kind==='free');return {week,kind:free?'free':'shard',allowed:d.oracle.receipts.length<20000&&(free||shards>0)}}
+export function offerOracle(d,shards,t=Date.now()){const week=weekKey(t),free=!d.oracle.receipts.some(r=>r.week===week&&r.kind==='free');return {week,kind:free?'free':'shard',allowed:d.oracle.receipts.length<20000&&d.oracle.receipts.filter(r=>r.week===week).length<3&&(free||shards>0)}}
 export function newOracle(d,sessionId,t){if(!id(sessionId)||!time(t)||d.oracle.session&&!d.oracle.session.closed)return false;d.oracle.session={id:sessionId,started:t,closed:false,turns:[],campaignSaved:false};return true}
 export function appendOracle(d,{sessionId,index,turn,startedAt,kind},shards){const o=d.oracle,s=o.session;if(!s||s.id!==sessionId||s.closed||s.turns.length!==index||index>=ORACLE_MAX||!validTurn(turn))return false;
  if(index===0){const offer=offerOracle(d,shards,startedAt);if(!offer.allowed||offer.kind!==kind||o.receipts.some(r=>r.id===sessionId))return false;o.receipts.push({id:sessionId,time:startedAt,week:offer.week,kind})}

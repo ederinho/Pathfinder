@@ -36,6 +36,8 @@ export function wallet(d){
 export const shop=Object.freeze([
  Object.freeze({id:'traveller-cloak',name:'Płaszcz Wędrowca',price:100,rarity:'Prosty',symbol:'◈',description:'Wytarty płaszcz podróżny, znak pierwszych kroków na szlaku.'}),
  Object.freeze({id:'guild-cloak',name:'Płaszcz Strażnika Gildii',price:300,rarity:'Rzadki',symbol:'✦',description:'Ciemna tkanina i złote obszycie, barwy zaufanych wędrowców.'}),
+ Object.freeze({id:'room-lantern',name:'Mosiężna latarnia',price:60,rarity:'Dekoracja',symbol:'✦',category:'room',description:'Ciepłe światło w kwaterze.'}),
+ Object.freeze({id:'room-map',name:'Mapa na ścianę',price:90,rarity:'Dekoracja',symbol:'▤',category:'room',description:'Pamiątka przebytych szlaków.'}),
  Object.freeze({id:'lantern-cloak',name:'Płaszcz Ostatniej Latarni',price:750,rarity:'Unikatowy',symbol:'◇',description:'Szata o haftach przypominających światło pośród mroku.'})
 ]);
 const item=id=>shop.find(x=>x.id===id);
@@ -47,7 +49,7 @@ function validateSpending(d){
  if(!Array.isArray(e.purchases)||e.purchases.length>shop.length||!Array.isArray(e.visits)||e.visits.length>20000)fail();
  const owned=new Set(),ids=new Set(),days=new Set();
  for(const p of e.purchases){if(!p||!item(p.id)||owned.has(p.id)||!timestamp(p.time))fail();owned.add(p.id)}
- if(e.equipped!==null&&!owned.has(e.equipped))fail();
+ if(e.equipped!==null&&(!owned.has(e.equipped)||item(e.equipped)?.category==='room'))fail();
  for(const v of e.visits){if(!v||!visitId(v.id)||ids.has(v.id)||!timestamp(v.time)||typeof v.day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v.day)||!['free','seal'].includes(v.kind))fail();ids.add(v.id);if(v.kind==='free'){if(days.has(v.day))fail();days.add(v.day)}else if(!days.has(v.day))fail()}
  const b=wallet(d);if(b.gold<0||b.seals<0||b.shards<0)fail();
 }
@@ -55,10 +57,10 @@ export function purchase(d,id,time=Date.now()){
  const p=item(id),e=d.economy;if(!p||e.purchases.some(x=>x.id===id)||wallet(d).gold<p.price)return false;
  e.purchases.push({id,time});return true;
 }
-export function equip(d,id){if(id!==null&&!d.economy.purchases.some(p=>p.id===id))return false;d.economy.equipped=id;return true}
+export function equip(d,id){if(id!==null&&(item(id)?.category==='room'||!d.economy.purchases.some(p=>p.id===id)))return false;d.economy.equipped=id;return true}
 export function visitOffer(d,time=Date.now()){
  const date=dateKey(time),free=!d.economy.visits.some(v=>v.day===date&&v.kind==='free');
- return {day:date,kind:free?'free':'seal',allowed:d.economy.visits.length<20000&&(free||wallet(d).seals>0)};
+ return {day:date,kind:free?'free':'seal',allowed:d.economy.visits.length<20000&&d.economy.visits.filter(v=>v.day===date).length<3&&(free||wallet(d).seals>0)};
 }
 export function recordVisit(d,id,time,kind){
  const e=d.economy;if(!visitId(id)||!timestamp(time))return false;

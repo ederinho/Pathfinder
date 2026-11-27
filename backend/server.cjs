@@ -5,6 +5,8 @@ const { randomBytes, timingSafeEqual } = require('node:crypto');
 const assert = require('node:assert/strict');
 const {makeProvider,selfTest:aiSelfTest,usageSummary,validateContext}=require('./openai-provider.cjs');
 const oracle=require('./oracle-protocol.cjs');
+const {uuid,period}=require('./quota.cjs');
+const chronicle=require('./chronicle-protocol.cjs');
 const HOST = '127.0.0.1';
 const {remoteConfig}=require('./remote-config.cjs');
 const MAX_BYTES = 16384;
@@ -43,15 +45,16 @@ function makeServer(token, provider=null, usageReader=usageSummary) {
       try{return response(res,200,{ok:true,service:'pathfinder',mode:provider?'openai':'mock',usage:usageReader()})}
       catch{return response(res,503,{error:'ledger_unavailable'})}
     }
-    const isOracle=req.url==='/v1/oracle/consult', max=isOracle?32768:MAX_BYTES;
-    if(!isOracle&&req.url!=='/v1/guild/consult') return response(res,404,{error:'not_found'});
+    const isOracle=req.url==='/v1/oracle/consult',isBook=req.url==='/v1/chronicle/compose', max=isOracle?32768:MAX_BYTES;
+    if(!isOracle&&!isBook&&req.url!=='/v1/guild/consult') return response(res,404,{error:'not_found'});
     if(req.method!=='POST') return response(res,405,{error:'method_not_allowed'});
     if(!authenticated(req,token)) return response(res,401,{error:'unauthorized'});
     if(!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type']||'')) return response(res,415,{error:'json_required'});
     if(Number(req.headers['content-length'])>max) return response(res,413,{error:'payload_too_large'});
     try {
       const input=await readJson(req,max);
-      if(isOracle){const v=oracle.validateOracle(input);return response(res,200,provider?await provider({...v,npc:'oracle'}):oracle.fixture(v));}
+      if(isBook){const v=chronicle.validate(input);return response(res,200,provider?await provider({...v,npc:'chronicle'}):{schema:'pathfinder-chronicle-response-v1',mode:'mock',week:period().week,title:'Próba Kroniki (MOCK)',prose:'Kronikarz przyjął zapis do testu. To przykładowy tekst, nie opowieść wygenerowana przez AI.',usage:{apiCost:0}});}
+      if(isOracle){const v=oracle.validateOracle(input),session=req.headers['x-pathfinder-session'];if(provider&&!uuid(session))return response(res,400,{error:'invalid_session'});return response(res,200,provider?await provider({...v,npc:'oracle',session}):oracle.fixture(v));}
       if(!input || typeof input!=='object' || Array.isArray(input) || typeof input.message!=='string' || !input.message.trim() || input.message.length>2000 || !Number.isInteger(input.availableMinutes) || input.availableMinutes<0 || input.availableMinutes>240) return response(res,400,{error:'invalid_input'});
       input.context=validateContext(input.context);
       return response(res,200,provider?await provider(input):fixture(input.availableMinutes,input));

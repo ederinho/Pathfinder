@@ -1,5 +1,6 @@
+import {enrichNodes,prologueProse,migrateCursor} from './narrative-921.js';
 // Authored opening; separate from personal AI campaigns. No real-time clock, EXP or currency.
-export const storyNodes=Object.freeze({
+export const storyNodes=enrichNodes({
  arrival:{day:1,theme:'road',speaker:'Narrator',location:'Przed Ostatnią Latarnią',lines:['Od Wielkiego Zatarcia dawne drogi nie zawsze prowadzą tam, gdzie powinny. Dziś pośród deszczu dostrzegasz światło Ostatniej Latarni.','Nie przybywasz tu jako wybraniec. Jesteś Wędrowcem, który szuka własnej drogi.'],choices:[{label:'Wejdź do środka',to:'fireplace'}]},
  fireplace:{day:1,theme:'hall',speaker:'Kael',portrait:'kael',location:'Sala Gildii',lines:['Usiądź przy ogniu. Gildia nie obiecuje, że znajdziesz gotowe odpowiedzi. Możesz jednak znaleźć ludzi, którzy pomogą ci postawić kolejny krok.','Co przywiodło cię do nas?'],choices:[{label:'Szukam nowego kierunku.',to:'chronicle',flag:'direction'},{label:'Chcę zdobyć doświadczenie.',to:'chronicle',flag:'experience'},{label:'Jeszcze nie wiem.',to:'chronicle',flag:'uncertain'}]},
  chronicle:{day:1,theme:'archive',speaker:'Edran',portrait:'edran',location:'Archiwum Gildii',lines:['Oto Pusta Kronika. Nie musisz zapisywać w niej wszystkiego. To od ciebie zależy, co uznasz za warte pamięci.','Nie jesteś sumą cudzych opowieści o tobie. Zacznij własną, jeśli zechcesz.'],choices:[{label:'Przyjmuję kronikę.',to:'chamber',flag:'chronicle'},{label:'Na razie wolę słuchać.',to:'chamber',flag:'listen'}]},
@@ -10,14 +11,14 @@ export const storyNodes=Object.freeze({
  alden:{day:3,theme:'archive',speaker:'Alden',portrait:'alden',location:'Stół z mapami',lines:['Spójrz na Kompas Wędrowca. Nie rozstrzyga, co jest dobre, a co złe. Nie zdejmie też z ciebie ciężaru decyzji.','Jest coś niepokojącego na szlaku do Brzezin. Zapis trasy nie zgadza się z relacjami tych, którzy nią wrócili.'],choices:[{label:'Przyjrzyj się mapie.',to:'brzeziny',flag:'map'},{label:'Zapytaj o bezpieczeństwo szlaku.',to:'brzeziny',flag:'caution'}]},
  brzeziny:{day:3,theme:'road',speaker:'Narrator',location:'Szlak do Brzezin',lines:['Na mapie widać drogę, która nie powinna się urywać. To pytanie pozostanie z tobą, gdy wrócisz do Gildii.','Możesz obrać własny cel lub po prostu wędrować dalej. Przysięga nie jest warunkiem przyjęcia.'],choices:[{label:'Chcę złożyć dobrowolną przysięgę.',to:'epilogue',flag:'oath'},{label:'Wybieram własną drogę bez przysięgi.',to:'epilogue',flag:'noOath'}]},
  epilogue:{day:3,theme:'hall',speaker:'Kael',portrait:'kael',location:'Ostatnia Latarnia',lines:['Masz prawo wracać, odchodzić i zmieniać zdanie. Świat nie będzie wymagał, abyś biegł szybciej, niż możesz.','Pierwszy rozdział jest za tobą. Tajemnica Brzezin pozostaje otwarta.'],choices:[{label:'Zakończ prolog',end:true}]}
-});
+},prologueProse);
 export const npcIds=['kael','merchant','oracle'];
 const allowedFlags=new Set(Object.values(storyNodes).flatMap(n=>n.choices.map(c=>c.flag).filter(Boolean)));
 export function normalizeStory(d){
- if(d.storyWorld===undefined)d.storyWorld={version:1,node:'arrival',line:0,finished:false,flags:[],encounters:{kael:0,merchant:0,oracle:0}};
- const s=d.storyWorld;
+ if(d.storyWorld===undefined)d.storyWorld={version:1,narrative:2,node:'arrival',line:0,finished:false,flags:[],encounters:{kael:0,merchant:0,oracle:0}};
+ const s=d.storyWorld;migrateCursor(s,storyNodes);
  if(!s||s.version!==1||!Object.hasOwn(storyNodes,s.node)||!Number.isInteger(s.line)||s.line<0||s.line>=storyNodes[s.node].lines.length||typeof s.finished!=='boolean'||(s.finished&&(s.node!=='epilogue'||s.line!==storyNodes.epilogue.lines.length-1))||!Array.isArray(s.flags)||s.flags.length>allowedFlags.size||s.flags.some(f=>!allowedFlags.has(f))||new Set(s.flags).size!==s.flags.length||!s.encounters||npcIds.some(k=>!Number.isSafeInteger(s.encounters[k])||s.encounters[k]<0||s.encounters[k]>1000000))throw Error('storyWorld');
- d.storyWorld={version:1,node:s.node,line:s.line,finished:s.finished,flags:[...s.flags],encounters:Object.fromEntries(npcIds.map(k=>[k,s.encounters[k]]))};return d.storyWorld;
+ d.storyWorld={version:1,narrative:2,node:s.node,line:s.line,finished:s.finished,flags:[...s.flags],encounters:Object.fromEntries(npcIds.map(k=>[k,s.encounters[k]]))};return d.storyWorld;
 }
 export function storyStep(d,expected,choice=null){const s=normalizeStory(d);if(s.finished||s.node!==expected.node||s.line!==expected.line)return false;const n=storyNodes[s.node];if(s.line<n.lines.length-1){if(choice!==null)return false;s.line++;return true}if(!Number.isInteger(choice)||!n.choices[choice])return false;const c=n.choices[choice];if(c.flag&&!s.flags.includes(c.flag))s.flags.push(c.flag);if(c.end)s.finished=true;else{s.node=c.to;s.line=0}return true}
 export function noteEncounter(d,id){if(!npcIds.includes(id))return false;const s=normalizeStory(d);s.encounters[id]=Math.min(1000000,s.encounters[id]+1);return true}

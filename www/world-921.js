@@ -3,7 +3,8 @@ import {openServerSettings} from './server-921.js';
 import './app-921.js';
 import './kael-mock.js';
 import './oracle-ui.js';
-import {readStory} from './app-921.js';
+import {openRoom,openCompass,openRelations} from './beyond-ui-921.js';
+import {readBeyond,readStory} from './app-921.js';
 import {openStory} from './story-ui-921.js';
 import {storyNodes} from './story-921.js';
 import {openScene} from './vn-921.js';
@@ -13,7 +14,7 @@ const locations=Object.freeze({
  market:{name:'Kram Rovana',kind:'HANDEL I WYPOSAŻENIE',symbol:'◈',description:'Przyjrzyj się towarom kupca albo sprawdź stan swoich zasobów.',routes:['guild'],actions:[['Odwiedź Rovana','merchantWorldEntry'],['Ekwipunek','equipment','character']]},
  sanctuary:{name:'Sanktuarium Wyroczni',kind:'REFLEKSJA I KAMPANIE',symbol:'◇',description:'Miejsce spokojnej rozmowy o możliwych drogach. Nie każda decyzja wymaga natychmiastowej odpowiedzi.',routes:['guild'],actions:[['Porozmawiaj z Wyrocznią','oracleWorldEntry'],['Osobiste kampanie','campaigns','bestiary']]},
  chamber:{name:'Kwatera Wędrowca',kind:'ODPOCZYNEK',symbol:'☾',description:'Własne miejsce w Ostatniej Latarni. Tutaj nic nie wymaga pośpiechu.',routes:['guild'],actions:[['Postać Wędrowca','profile','character']]},
- road:{name:'Szlak do Brzezin',kind:'TAJEMNICA SZLAKU',symbol:'◇',description:'W oddali droga znika wśród drzew. Dalsza wyprawa będzie częścią kolejnego rozdziału.',routes:['guild'],actions:[]},
+ road:{name:'Szlak do Brzezin',kind:'TAJEMNICA SZLAKU',symbol:'◇',description:'W oddali droga znika wśród drzew. Brzeziny czekają na odkrycie. Rozdział obejmuje dni fabularne 4–7.',routes:['guild'],actions:[]},
  archive:{name:'Archiwum Gildii',kind:'HISTORIA WĘDROWCA',symbol:'▤',description:'Kroniki i opowieści pozwalają spojrzeć wstecz na przebytą drogę.',routes:['guild'],actions:[['Otwórz kronikę','history','history'],['Odwiedź Kronikarza','chroniclerOpen','journal']]}
 });
 const root=document.getElementById('world');
@@ -49,7 +50,11 @@ function render(focus=false){
  const path=el('div',undefined,'world-breadcrumb');path.append(el('span','ŚWIAT / '+(current==='guild'?'GILDIA':loc.name.toUpperCase())));path.append(button(current==='road'?'‹ Mapa świata':'‹ Ostatnia Latarnia',()=>showMap(current==='road'?'region':'town')));root.append(path);
  const scene=el('section',undefined,'world-scene world-'+current);scene.append(el('div',loc.symbol,'world-symbol'),el('small',loc.kind,'world-kicker'),el('h2',loc.name,'world-title'),el('p',loc.description));root.append(scene);
  if(current==='guild'){const story=readStory(),chapter=el('section',undefined,'world-story');chapter.append(el('small','KAMPANIA AUTORSKA · NIEZALEŻNA OD ŻYCIA','gold'),el('h3','Prolog — Ostatnia Latarnia'),el('p',story.finished?'Prolog ukończony · tajemnica Brzezin czeka.':'Dzień fabularny '+storyNodes[story.node].day+' z 66 · bez limitu realnego czasu.'));if(!story.finished)chapter.append(button(story.node==='arrival'&&story.line===0?'Rozpocznij prolog':'Wznów prolog',()=>openStory(()=>render()),'world-action'));root.append(chapter)}
- const actions=el('section',undefined,'world-actions');if(loc.actions.length){actions.append(el('h3','Co chcesz zrobić?'));for(const [name,id,tab] of loc.actions){const b=button(name,()=>activate(id,tab),'world-action');if(!tab&&!document.getElementById(id)&&!['kaelWorldEntry','oracleWorldEntry'].includes(id)){b.disabled=true;b.title='Dostępne w aplikacji Android';}actions.append(b);}root.append(actions);}
+ const actions=el('section',undefined,'world-actions');
+ if(current==='road'){const c=readBeyond().chapter;actions.append(el('h3','Rozdział I · Brzeziny'),el('p',c.finished?'Rozdział ukończony · Przynależność': 'Czas fabularny, bez powiązania z kalendarzem.'));if(!c.finished)actions.append(button(c.node==='bridge'&&c.line===0?'Rozpocznij wyprawę':'Wznów wyprawę',()=>openStory(()=>render(),true),'world-action'));root.append(actions)}
+ if(current==='chamber'){actions.append(button('Pamiętnik i kwatera',openRoom,'world-action'),button('Kompas · cele i kamienie milowe',openCompass,'world-action'),button('Znajomości w Gildii',openRelations,'world-action'))}
+ if(current==='hall')actions.append(button('Znajomości w Gildii',openRelations,'world-action'));
+if(loc.actions.length){actions.append(el('h3','Co chcesz zrobić?'));for(const [name,id,tab] of loc.actions){const b=button(name,()=>activate(id,tab),'world-action');if(!tab&&!document.getElementById(id)&&!['kaelWorldEntry','oracleWorldEntry'].includes(id)){b.disabled=true;b.title='Dostępne w aplikacji Android';}actions.append(b);}root.append(actions);}
  root.append(button('‹ Wróć na mapę',()=>showMap(current==='road'?'region':'town'),'world-action map-return'));
  root.append(el('p','Podróż nie zużywa waluty ani czasu fabularnego. Usługi NPC rozliczane są na dotychczasowych zasadach.','muted world-note'));
  if(focus){const h=scene.querySelector('h2');h.tabIndex=-1;h.focus({preventScroll:true});window.scrollTo(0,0)}

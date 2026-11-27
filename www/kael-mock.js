@@ -99,14 +99,14 @@ import {contractXP} from './kael-contracts.js';
     if(!http?.request){status.textContent='Brak natywnego modułu CapacitorHttp.';return;}
     const ctx=context();if(JSON.stringify(ctx)!==JSON.stringify(JSON.parse(preview.textContent))){refreshPreview();status.textContent='Kontekst się zmienił. Sprawdź podgląd i ponownie zatwierdź.';return;}
     const startedAt=Date.now(),offer=kaelVisitOffer(startedAt);showPrice();
-    if(!offer.allowed){status.textContent='Brak Pieczęci. Kolejna darmowa wizyta jutro.';return;}
+    if(!offer.allowed){status.textContent='Brak Pieczęci lub dzienny limit 3 konsultacji. Wróć jutro.';return;}
     if(offer.kind==='seal'&&!confirm('Wydać 1 Pieczęć Gildii za poprawną odpowiedź Kaela?'))return;
     const receipt=crypto.randomUUID();
     busy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;status.textContent='Łączenie z Kaelem…';const g=++generation, started=performance.now();
     try{
       const r=await http.request({url:origin+'/v1/guild/consult',method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},data:{message:m,availableMinutes:n,context:ctx},connectTimeout:5000,readTimeout:60000,disableRedirects:true,responseType:'json'});
       if(g!==generation)return;
-      if(r.status!==200){status.textContent='Serwer: HTTP '+Number(r.status)+(r.status===401?' — sprawdź token.':r.status===429?' — limit prób lub zapytanie w toku.':r.status===502?' — błąd dostawcy AI lub niepoprawna odpowiedź.':'');return;}
+      if(r.status!==200){status.textContent='Serwer: HTTP '+Number(r.status)+(r.status===401?' — sprawdź token.':r.status===429?' — limit konsultacji, budżetu lub zapytanie w toku.':r.status===502?' — błąd dostawcy AI lub niepoprawna odpowiedź.':'');return;}
       const b=typeof r.data==='string'?JSON.parse(r.data):r.data;
       if(b?.schema!=='pathfinder-guild-response-v1'||!['mock','openai'].includes(b.mode)||b.npc!=='kael'||typeof b.dialogue!=='string'||!Array.isArray(b.contracts)||b.contracts.length>3||(!Number.isFinite(b.usage?.apiCost)||b.usage.apiCost<0||(b.mode==='mock'&&b.usage.apiCost!==0)||(b.mode==='openai'&&b.usage.currency!=='USD'))||!b.contracts.every(c=>c&&typeof c.title==='string'&&typeof c.action==='string'&&typeof c.completion==='string'&&Number.isInteger(c.minutes)&&c.minutes>0)||b.contracts.reduce((s,c)=>s+c.minutes,0)>n){status.textContent='Nieprawidłowa odpowiedź testowa.';return;}
       const elapsed=((performance.now()-started)/1000).toFixed(1);

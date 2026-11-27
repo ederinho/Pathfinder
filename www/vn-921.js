@@ -1,5 +1,5 @@
 import {sceneArtwork} from './awakening-art-921.js';
-import {readStory,recordEncounter} from './app-921.js';
+import {readStory,readBeyond,recordEncounter} from './app-921.js';
 import {scenes} from './vn-scenes-921.js';
 import {initialCursor,advance,choose} from './vn-state-921.js';
 const key='pathfinder-vn-position-v1';
@@ -17,12 +17,12 @@ function render(){
  const top=el('header',undefined,'vn-top');top.append(el('span',s.location,'vn-location'),btn('Wróć do świata',()=>exit(),'vn-exit'));
  const stage=previousStage?.dataset.sceneKey===s.theme+':'+s.portrait?previousStage:sceneArtwork(s.theme,s.portrait);stage.dataset.sceneKey=s.theme+':'+s.portrait;
  const panel=el('section',undefined,'vn-panel');const title=el('h2',s.name,'vn-speaker');const line=el('p','','vn-line');line.setAttribute('aria-label',n.lines[cursor.line]);const actions=el('div',undefined,'vn-choices');actions.setAttribute('aria-label','Odpowiedzi');
- const known=readStory().encounters[s.npc]>0;full=known&&cursor.node===s.start&&cursor.line===0&&s.returning?s.returning:n.lines[cursor.line];line.setAttribute('aria-label',full);units=Array.from(full);shown=0;
+ const count=readStory().encounters[s.npc]||0,known=count>0;full=known&&cursor.node===s.start&&cursor.line===0&&s.returning?s.returning:n.lines[cursor.line];if(active==='kaelWorldEntry'&&cursor.node===s.start&&cursor.line===0&&readBeyond().chapter.finished)full='Witaj z powrotem. Wieści z Brzezin dotarły do Gildii. Dobrze, że mieszkańcy mogą znów liczyć dni.';line.setAttribute('aria-label',full);units=Array.from(full);shown=0;
  let revealed=false,choicesAt=Infinity;const following=advance(s,cursor);
  const hint=btn('Dotknij, aby pominąć tekst',tap,'vn-tap-hint');
  function tap(){if(ending||!cursor)return;if(!revealed){reveal();return}if(following){cursor=following;render()}}
  d.onclick=e=>{if(e.target.closest('button,a,input,textarea,select,label,[role=button]'))return;tap()};
- function reveal(){if(revealed)return;revealed=true;stop();shown=units.length;line.textContent=full;actions.replaceChildren();if(following){hint.textContent='Dalej ›'}else{hint.textContent='Wybierz odpowiedź';hint.disabled=true;choicesAt=performance.now()+450;n.choices.forEach((v,i)=>{const b=btn(v.label,async()=>{if(ending||!cursor||performance.now()<choicesAt)return;const r=choose(s,cursor,i);if(!r)return;if(r.cursor){cursor=r.cursor;render()}else if(r.end||r.service){const cb=launch;const npc=s.npc;ending=true;d.querySelectorAll('button').forEach(x=>x.disabled=true);try{if(npc)await recordEncounter(npc)}catch{}finally{ending=false}exit(true);if(r.service)cb?.(r.service)}},'vn-choice');actions.append(b)})}}
+ function reveal(){if(revealed)return;revealed=true;stop();shown=units.length;line.textContent=full;actions.replaceChildren();if(following){hint.textContent='Dalej ›'}else{hint.textContent='Wybierz odpowiedź';hint.disabled=true;choicesAt=performance.now()+450;n.choices.forEach((v,i)=>{if(v.requires&&count<v.requires)return;const b=btn(v.label,async()=>{if(ending||!cursor||performance.now()<choicesAt)return;const r=choose(s,cursor,i);if(!r)return;if(r.cursor){cursor=r.cursor;render()}else if(r.end||r.service){const cb=launch;const npc=s.npc;ending=true;d.querySelectorAll('button').forEach(x=>x.disabled=true);try{if(npc)await recordEncounter(npc)}catch{}finally{ending=false}exit(true);if(r.service)cb?.(r.service)}},'vn-choice');actions.append(b)})}}
  panel.append(title,line,actions,hint);d.replaceChildren(top,stage,panel);d.scrollTop=0;
  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches||(document.body.classList.contains('fx-off')||document.body.classList.contains('living-battery')))reveal();else timer=setInterval(()=>{shown=Math.min(units.length,shown+2);line.textContent=units.slice(0,shown).join('');if(shown>=units.length)reveal()},22);
 }
