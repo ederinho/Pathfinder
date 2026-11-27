@@ -3,7 +3,7 @@
 const http = require('node:http');
 const { randomBytes, timingSafeEqual } = require('node:crypto');
 const assert = require('node:assert/strict');
-const {makeProvider,selfTest:aiSelfTest,usageSummary}=require('./openai-provider.cjs');
+const {makeProvider,selfTest:aiSelfTest,usageSummary,validateContext}=require('./openai-provider.cjs');
 const HOST = '127.0.0.1';
 const MAX_BYTES = 16384;
 function response(res, status, body) {
@@ -49,6 +49,7 @@ function makeServer(token, provider=null, usageReader=usageSummary) {
     try {
       const input=await readJson(req);
       if(!input || typeof input!=='object' || Array.isArray(input) || typeof input.message!=='string' || !input.message.trim() || input.message.length>2000 || !Number.isInteger(input.availableMinutes) || input.availableMinutes<0 || input.availableMinutes>240) return response(res,400,{error:'invalid_input'});
+      input.context=validateContext(input.context);
       return response(res,200,provider?await provider(input):fixture(input.availableMinutes));
     } catch(err) { if(!res.destroyed && !res.headersSent) response(res,err.status||500,{error:err.status?err.message:'internal_error'}); }
   });
@@ -70,6 +71,9 @@ async function selfTest() {
     r=await call({message:'',availableMinutes:30});assert.equal(r.status,400);await r.text();
     r=await call({message:'Test',availableMinutes:241});assert.equal(r.status,400);await r.text();
     r=await fetch(base+'/v1/guild/consult',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:'{'});assert.equal(r.status,400);await r.text();console.log('OK - INPUT VALIDATION');
+    r=await call({message:'Test',availableMinutes:30,context:{memory:{profile:'x'.repeat(601),goals:'',preferences:''}}});assert.equal(r.status,400);await r.text();
+    r=await call({message:'Test',availableMinutes:30,context:{diary:'private'}});assert.equal(r.status,400);await r.text();
+    r=await call({message:'Test',availableMinutes:30,context:{memory:{profile:'Test',goals:'Test',preferences:''},history:{active:['A'],completed:['B']}}});assert.equal(r.status,200);await r.text();console.log('OK - MEMORY INPUT VALIDATION');
     for(const n of [0,1,5,9,10,15,30,60,240]) {
       r=await call({message:'Synthetic test only',availableMinutes:n});assert.equal(r.status,200);const b=await r.json();assert.equal(b.mode,'mock');assert.equal(b.usage.apiCost,0);assert.ok(b.contracts.length<=3);assert.ok(b.contracts.reduce((s,c)=>s+c.minutes,0)<=n);
     }

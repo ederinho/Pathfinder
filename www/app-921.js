@@ -128,3 +128,13 @@ export async function acceptKaelContracts(visit,chosen,availableMinutes){
  }finally{restoring=false}
  try{render();window.scrollTo(0,0)}catch(e){console.error('Kael: saved, redraw failed',e?.name||'Error')}
 }
+
+
+// PF_MEMORY_V1 — local archive, only explicit context sharing.
+export function readKaelMemory(){return {...(data.kaelMemory||{profile:'',goals:'',preferences:''})}}
+export function kaelProfileDraft(){return {profile:String(data.profile?.description||'').slice(0,600),goals:String(data.origins?.currentGoals||data.origins?.goals||'').slice(0,600)}}
+export function kaelHistory(){const clip=s=>String(s||'').slice(0,100);return {active:data.quests.filter(q=>!completion(q)).slice(-4).map(q=>clip(q.name)),completed:[...data.log].sort((a,b)=>b.time-a.time).slice(0,4).map(q=>clip(q.name))}}
+export async function writeKaelMemory(value){
+ if(restoring)throw Error('archive_busy');restoring=true;
+ try{await flushArchive();const next=validateBackup({...structuredClone(data),kaelMemory:{...value}});await persist(next);data=next;}finally{restoring=false;}
+}
