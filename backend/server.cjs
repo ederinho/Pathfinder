@@ -45,7 +45,7 @@ function makeServer(token, provider=null, usageReader=usageSummary) {
       try{return response(res,200,{ok:true,service:'pathfinder',mode:provider?'openai':'mock',usage:usageReader()})}
       catch{return response(res,503,{error:'ledger_unavailable'})}
     }
-    const isOracle=req.url==='/v1/oracle/consult',isBook=req.url==='/v1/chronicle/compose', max=isOracle?32768:MAX_BYTES;
+    const isOracle=req.url==='/v1/oracle/consult',isBook=req.url==='/v1/chronicle/compose', max=isBook?65536:isOracle?32768:MAX_BYTES;
     if(!isOracle&&!isBook&&req.url!=='/v1/guild/consult') return response(res,404,{error:'not_found'});
     if(req.method!=='POST') return response(res,405,{error:'method_not_allowed'});
     if(!authenticated(req,token)) return response(res,401,{error:'unauthorized'});
@@ -57,7 +57,7 @@ function makeServer(token, provider=null, usageReader=usageSummary) {
       if(isOracle){const v=oracle.validateOracle(input),session=req.headers['x-pathfinder-session'];if(provider&&!uuid(session))return response(res,400,{error:'invalid_session'});return response(res,200,provider?await provider({...v,npc:'oracle',session}):oracle.fixture(v));}
       if(!input || typeof input!=='object' || Array.isArray(input) || typeof input.message!=='string' || !input.message.trim() || input.message.length>2000 || !Number.isInteger(input.availableMinutes) || input.availableMinutes<0 || input.availableMinutes>240) return response(res,400,{error:'invalid_input'});
       input.context=validateContext(input.context);
-      return response(res,200,provider?await provider(input):fixture(input.availableMinutes,input));
+      return response(res,200,provider?await provider({...input,npc:'kael'}):fixture(input.availableMinutes,input));
     } catch(err) { if(!res.destroyed && !res.headersSent) response(res,err.status||500,{error:err.status?err.message:'internal_error'}); }
   });
   return server;
