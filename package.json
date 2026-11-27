@@ -4,7 +4,8 @@
   "description": "",
   "main": "app-913.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:android": "node scripts/build-android.cjs"
   },
   "repository": {
     "type": "git",
