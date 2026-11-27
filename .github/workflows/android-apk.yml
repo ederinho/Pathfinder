@@ -3,6 +3,8 @@ name: Pathfinder Android APK
 'on':
   pull_request:
     branches: [living-characters]
+  push:
+    branches: [living-characters]
   workflow_dispatch:
 
 permissions:
