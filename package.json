@@ -5,7 +5,8 @@
   "main": "app-913.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:android": "node scripts/build-android.cjs"
+    "build:android": "node scripts/build-android.cjs",
+    "backend:test": "node backend/server.cjs --self-test"
   },
   "repository": {
     "type": "git",
