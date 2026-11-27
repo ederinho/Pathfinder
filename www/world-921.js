@@ -1,3 +1,4 @@
+import {openServerSettings} from './server-921.js';
 // Living World 0.15.0: offline navigation, existing service screens.
 import './app-921.js';
 import './kael-mock.js';
@@ -27,7 +28,7 @@ function activate(id,tab){
 }
 function render(focus=false){
  const loc=locations[current];root.replaceChildren();
- const path=el('div',undefined,'world-breadcrumb');path.append(el('span','ŚWIAT / '+(current==='guild'?'GILDIA':loc.name.toUpperCase())));if(current!=='guild')path.append(button('↶ Gildia',()=>go('guild')));root.append(path);
+ const path=el('div',undefined,'world-breadcrumb');path.append(el('span','ŚWIAT / '+(current==='guild'?'GILDIA':loc.name.toUpperCase())));if(current!=='guild')path.append(button('↶ Gildia',()=>go('guild')));if(window.Capacitor?.isNativePlatform?.())path.append(button('Połączenie AI',openServerSettings));root.append(path);
  const scene=el('section',undefined,'world-scene world-'+current);scene.append(el('div',loc.symbol,'world-symbol'),el('small',loc.kind,'world-kicker'),el('h2',loc.name,'world-title'),el('p',loc.description));root.append(scene);
  if(current==='guild'){const story=readStory(),chapter=el('section',undefined,'world-story');chapter.append(el('small','KAMPANIA AUTORSKA · NIEZALEŻNA OD ŻYCIA','gold'),el('h3','Prolog — Ostatnia Latarnia'),el('p',story.finished?'Prolog ukończony · tajemnica Brzezin czeka.':'Dzień fabularny '+storyNodes[story.node].day+' z 66 · bez limitu realnego czasu.'));if(!story.finished)chapter.append(button(story.node==='arrival'&&story.line===0?'Rozpocznij prolog':'Wznów prolog',()=>openStory(()=>render()),'world-action'));root.append(chapter)}
  const actions=el('section',undefined,'world-actions');if(loc.actions.length){actions.append(el('h3','Co chcesz zrobić?'));for(const [name,id,tab] of loc.actions){const b=button(name,()=>activate(id,tab),'world-action');if(!tab&&!document.getElementById(id)&&!['kaelWorldEntry','oracleWorldEntry'].includes(id)){b.disabled=true;b.title='Dostępne w aplikacji Android';}actions.append(b);}root.append(actions);}

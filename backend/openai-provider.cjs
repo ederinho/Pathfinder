@@ -6,7 +6,7 @@ const LIMIT=100, DAILY=20, RESERVE=0.05, OUTPUT=1000;
 const ledgerFile=path.join(os.homedir(),'.pathfinder-dev','api-usage-v1.jsonl');
 function err(code,status=502){return Object.assign(new Error(code),{status})}
 function readLedger(file){
-  let raw;try{raw=fs.readFileSync(file,'utf8')}catch(e){if(e.code==='ENOENT')return [];throw err('ledger_unavailable',503)}
+  let raw;try{raw=fs.readFileSync(file,'utf8')}catch(e){if(e.code==='ENOENT'&&!(process.env.PATHFINDER_REMOTE==='1'&&file==='/data/api-usage-v1.jsonl'))return [];throw err('ledger_unavailable',503)}
   if(raw.length>1000000 || (raw.length && !raw.endsWith('\n')))throw err('ledger_invalid',503);
   let rows;try{rows=raw.split('\n').filter(Boolean).map(x=>JSON.parse(x))}catch{throw err('ledger_invalid',503)}
   const seen=new Set();for(const r of rows){if(!r||typeof r.id!=='string'||!/^[a-f0-9]{32}$/.test(r.id)||typeof r.day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(r.day))throw err('ledger_invalid',503);if(r.type==='reserve'){if(seen.has(r.id))throw err('ledger_invalid',503);seen.add(r.id)}else if(r.type==='usage'){if(!seen.has(r.id)||!Number.isSafeInteger(r.inputTokens)||r.inputTokens<0||!Number.isSafeInteger(r.outputTokens)||r.outputTokens<0)throw err('ledger_invalid',503)}else throw err('ledger_invalid',503)}return rows;

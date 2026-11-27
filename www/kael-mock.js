@@ -1,3 +1,4 @@
+import {activeOrigin,scopedVault} from './server-921.js';
 import {decorateService} from './awakening-art-921.js';
 // PF_KAEL_CONTRACT_ENGINE_1
 import {acceptKaelContracts,readKaelMemory,writeKaelMemory,kaelHistory,kaelProfileDraft,kaelVisitOffer,settleKaelVisit} from './app-921.js';
@@ -19,7 +20,7 @@ import {contractXP} from './kael-contracts.js';
   const forget=make('button','Usuń zapisany token');forget.type='button';
   const connection=make('p','Połączenie: niesprawdzone');connection.setAttribute('role','status');
   const verify=make('button','Sprawdź połączenie i koszty');verify.type='button';
-  const vault=cap.Plugins?.PathfinderDevToken || cap.registerPlugin?.('PathfinderDevToken');
+  let origin=activeOrigin(),vault=scopedVault(cap,origin);
   const msg=make('textarea');msg.rows=4;msg.maxLength=2000;msg.value='';msg.placeholder='Co sprowadza cię do Gildii?';
   const mins=make('input');mins.type='number';mins.min='0';mins.max='240';mins.step='1';mins.value='30';
   function label(t,e){const l=make('label',t);l.append(e);return l}
@@ -45,7 +46,7 @@ import {contractXP} from './kael-contracts.js';
   memorySave.onclick=()=>storeMemory(false);memoryClear.onclick=()=>storeMemory(true);
   memory.append(memoryTitle,make('p','Zapis w archiwum gry, także w szyfrowanej kopii. Pamięć lokalna nie jest osobno szyfrowana. Wpisuj tylko informacje, które chcesz zachować. Nie wpisuj danych osób trzecich, haseł ani informacji medycznych.'),label('Profil i doświadczenie',profile),label('Cele',goals),label('Preferencje i ograniczenia',preferences),memoryDraft,memorySave,memoryClear,memoryStatus);
   const sharing=make('section');sharing.append(label('Dołącz zapisaną pamięć do tej wizyty (Kael może zaproponować zmiany)',shareMemory),label('Dołącz maks. 4 aktywne i 4 ukończone zadania',shareHistory),make('p','Podgląd dodatkowych danych. W trybie OPENAI wiadomość i zaznaczone dane trafią do API. Dane nie są wysyłane przy samym zapisie.'),preview);
-  const technical=make('details');technical.append(make('summary','Połączenie i autoryzacja (USB)'),label('Token testowy (nie klucz OpenAI)',token),label('Zapamiętaj po poprawnej autoryzacji',remember),forget,verify);section.append(decorateService(dialog,'hall','kael'),title,close,note,connection,technical,memory,sharing,label('Wiadomość',msg),label('Dostępne minuty',mins),price,send,status,result);dialog.append(section);document.body.append(dialog);
+  const technical=make('details');technical.append(make('summary','Połączenie i autoryzacja'),label('Token testowy (nie klucz OpenAI)',token),label('Zapamiętaj po poprawnej autoryzacji',remember),forget,verify);section.append(decorateService(dialog,'hall','kael'),title,close,note,connection,technical,memory,sharing,label('Wiadomość',msg),label('Dostępne minuty',mins),price,send,status,result);dialog.append(section);document.body.append(dialog);
   let busy=false, saving=false, generation=0, opening=0, checking=false, vaultBusy=false;
   dialog.style.overflowY='auto';
   async function saveRemembered(t){
@@ -59,7 +60,7 @@ import {contractXP} from './kael-contracts.js';
     checking=true;verify.disabled=send.disabled=forget.disabled=token.disabled=remember.disabled=true;connection.textContent='Sprawdzanie połączenia…';
     try{
       const auth=/^[a-f0-9]{64}$/i.test(t);
-      const r=await http.request({url:'http://127.0.0.1:8787'+(auth?'/v1/dev/status':'/health'),method:'GET',headers:auth?{Authorization:'Bearer '+t}:{},connectTimeout:3000,readTimeout:5000,disableRedirects:true,responseType:'json'});
+      const r=await http.request({url:origin+(auth?'/v1/dev/status':'/health'),method:'GET',headers:auth?{Authorization:'Bearer '+t}:{},connectTimeout:3000,readTimeout:5000,disableRedirects:true,responseType:'json'});
       if(o!==opening)return;
       if(r.status===401){technical.open=true;connection.textContent='Serwer działa · nieprawidłowy token';return}
       const b=typeof r.data==='string'?JSON.parse(r.data):r.data;
@@ -67,12 +68,12 @@ import {contractXP} from './kael-contracts.js';
       connection.textContent='Połączono · '+b.mode.toUpperCase()+(auth?' · autoryzacja OK':' · podaj token');
       if(auth&&b.usage){const u=b.usage;connection.textContent+=' · próby: '+u.attempts+'/100 · szac. łącznie '+u.estimatedUsd.toFixed(6)+' USD · rozliczone: '+u.recordedResponses;}
       if(auth&&o===opening&&token.value.trim()===t){const warning=await saveRemembered(t);if(o===opening)connection.textContent+=warning;}
-    }catch{if(o===opening)connection.textContent='Brak połączenia lub niezgodna wersja backendu. Sprawdź launcher i USB.'}
+    }catch{if(o===opening)connection.textContent='Brak połączenia lub niezgodna wersja backendu. Sprawdź aktywny serwer, internet lub USB.'}
     finally{checking=false;verify.disabled=send.disabled=forget.disabled=token.disabled=remember.disabled=false}
   }
   button.onclick=async()=>{
     if(dialog.open||busy||saving||checking||vaultBusy)return;
-    const o=++opening;populate(readKaelMemory());shareMemory.checked=shareHistory.checked=false;memoryStatus.textContent='';refreshPreview();showPrice();dialog.showModal();vaultBusy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;
+    origin=activeOrigin();vault=scopedVault(cap,origin);note.textContent='Serwer: '+origin+' · Tryb OPENAI wysyła wiadomość i wybrany kontekst do dostawcy AI. Nie wpisuj sekretów ani danych innych osób.';const o=++opening;populate(readKaelMemory());shareMemory.checked=shareHistory.checked=false;memoryStatus.textContent='';refreshPreview();showPrice();dialog.showModal();vaultBusy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;
     try{const r=await vault.readToken();if(o===opening&&dialog.open){token.value=r.token||'';remember.checked=!!r.token;technical.open=!r.token;}}
     catch{if(o===opening){technical.open=true;connection.textContent='Nie udało się odczytać tokena. Możesz wpisać go ręcznie.'}}
     finally{vaultBusy=false;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=false;}
@@ -103,7 +104,7 @@ import {contractXP} from './kael-contracts.js';
     const receipt=crypto.randomUUID();
     busy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;status.textContent='Łączenie z Kaelem…';const g=++generation, started=performance.now();
     try{
-      const r=await http.request({url:'http://127.0.0.1:8787/v1/guild/consult',method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},data:{message:m,availableMinutes:n,context:ctx},connectTimeout:5000,readTimeout:60000,disableRedirects:true,responseType:'json'});
+      const r=await http.request({url:origin+'/v1/guild/consult',method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},data:{message:m,availableMinutes:n,context:ctx},connectTimeout:5000,readTimeout:60000,disableRedirects:true,responseType:'json'});
       if(g!==generation)return;
       if(r.status!==200){status.textContent='Serwer: HTTP '+Number(r.status)+(r.status===401?' — sprawdź token.':r.status===429?' — limit prób lub zapytanie w toku.':r.status===502?' — błąd dostawcy AI lub niepoprawna odpowiedź.':'');return;}
       const b=typeof r.data==='string'?JSON.parse(r.data):r.data;
@@ -161,7 +162,7 @@ import {contractXP} from './kael-contracts.js';
       }
       status.textContent=b.mode==='mock'?'OK — odpowiedź MOCK · koszt API: 0 zł':'OK — OPENAI · szac. '+b.usage.apiCost.toFixed(6)+' USD · pozostałe próby: '+b.usage.remainingAttempts;
       status.textContent+=' · '+elapsed+' s · '+(offer.kind==='free'?'wizyta darmowa':'wydano 1 Pieczęć')+warning;
-    }catch{if(g===generation)status.textContent='Nie udało się połączyć. Sprawdź serwer, USB i adb reverse.';}
+    }catch{if(g===generation)status.textContent='Nie udało się połączyć. Sprawdź aktywny serwer, internet lub USB.';}
     finally{busy=false;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=false;}
   };
 })();

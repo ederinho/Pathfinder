@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const {makeProvider,selfTest:aiSelfTest,usageSummary,validateContext}=require('./openai-provider.cjs');
 const oracle=require('./oracle-protocol.cjs');
 const HOST = '127.0.0.1';
+const {remoteConfig}=require('./remote-config.cjs');
 const MAX_BYTES = 16384;
 function response(res, status, body) {
   res.writeHead(status, {'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'});
@@ -92,5 +93,5 @@ else if(process.argv.includes('--self-test')) selfTest().catch(e=>{console.error
 else {
   const token=process.env.PATHFINDER_DEV_TOKEN;
   if(!token || !/^[a-f0-9]{64}$/i.test(token)) {console.error('STOP - Set PATHFINDER_DEV_TOKEN to a random 64-character hex token. Or use --self-test.');process.exitCode=1;}
-  else {const mode=process.env.PATHFINDER_AI_MODE||'mock';if(!['mock','openai'].includes(mode)){console.error('STOP - invalid mode');process.exit(1)}let provider=null;if(mode==='openai'){try{provider=makeProvider({key:process.env.OPENAI_API_KEY})}catch{console.error('STOP - OPENAI_API_KEY missing');process.exit(1)}}const server=makeServer(token,provider);server.on('error',e=>{console.error('STOP -',e.code||'server_error');process.exitCode=1});server.listen(8787,HOST,()=>console.log('Pathfinder '+mode.toUpperCase()+' listening on http://127.0.0.1:8787 (local only)'));}
+  else {let remote;try{remote=remoteConfig()}catch(e){console.error('STOP - remote configuration / persistent ledger unavailable');process.exit(1)}const mode=process.env.PATHFINDER_AI_MODE||'mock';if(!['mock','openai'].includes(mode)){console.error('STOP - invalid mode');process.exit(1)}let provider=null;if(mode==='openai'){try{provider=makeProvider({key:process.env.OPENAI_API_KEY,...(remote?{file:remote.file}:{})})}catch{console.error('STOP - OPENAI_API_KEY missing');process.exit(1)}}if(remote){try{usageSummary(remote.file)}catch{console.error('STOP - invalid ledger');process.exit(1)}}const server=makeServer(token,provider,remote?()=>usageSummary(remote.file):usageSummary);server.maxConnections=64;server.on('error',e=>{console.error('STOP -',e.code||'server_error');process.exitCode=1});server.listen(remote?remote.port:8787,remote?remote.host:HOST,()=>console.log('Pathfinder '+mode.toUpperCase()+(remote?' remote (HTTPS via Railway)':' local only')));}
 }
