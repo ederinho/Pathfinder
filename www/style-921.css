@@ -45,3 +45,7 @@ header{position:sticky;top:0;z-index:8;background:#141318f5;padding:8px 4px;gap:
 
 /* Guild wallet */
 .guild-wallet{margin:0 0 12px;padding:12px}.guild-wallet h3{margin:0 0 8px}.guild-wallet-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}.guild-wallet-tile{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 2px;border:1px solid #786442;border-radius:6px;background:#211c15}.guild-wallet-tile strong{color:#e1c27b;font-size:1.15rem;overflow-wrap:anywhere}.guild-wallet-tile small{font-size:.74rem}.guild-wallet progress{display:block;width:100%;height:7px;margin:6px 0 8px}.guild-wallet details p{overflow-wrap:anywhere;font-size:.85rem}.guild-wallet details summary{cursor:pointer}
+
+/* PF_MERCHANTS_V1 */
+.guild-merchant-item{border:1px solid #685536;border-radius:8px;padding:12px;margin:10px 0;background:rgba(40,32,23,.55)}
+.guild-merchant-item h4{margin:0 0 6px}.guild-merchant-item button{margin-top:6px}#guildMerchant{max-height:85dvh;overflow-y:auto}#guildWallet .guild-entry{margin:8px 0}

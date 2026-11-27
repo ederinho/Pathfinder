@@ -1,5 +1,5 @@
 // PF_KAEL_CONTRACT_ENGINE_1
-import {acceptKaelContracts,readKaelMemory,writeKaelMemory,kaelHistory,kaelProfileDraft} from './app-921.js';
+import {acceptKaelContracts,readKaelMemory,writeKaelMemory,kaelHistory,kaelProfileDraft,kaelVisitOffer,settleKaelVisit} from './app-921.js';
 import {stats} from './core-921.js';
 import {contractXP} from './kael-contracts.js';
 (() => {
@@ -22,6 +22,8 @@ import {contractXP} from './kael-contracts.js';
   const msg=make('textarea');msg.rows=4;msg.maxLength=2000;msg.value='Test: chcę zaplanować dzień.';
   const mins=make('input');mins.type='number';mins.min='0';mins.max='240';mins.step='1';mins.value='30';
   function label(t,e){const l=make('label',t);l.append(e);return l}
+  const price=make('p');price.setAttribute('role','status');
+  function showPrice(){const o=kaelVisitOffer();price.textContent=(o.kind==='free'?'Dzisiejsza wizyta: bezpłatna':'Dodatkowa wizyta: 1 Pieczęć Gildii')+' · Pieczęcie: '+o.seals+(!o.allowed?' · brak dostępu do kolejnej wizyty':'')+' · MOCK również rozlicza wizyty lokalnie.';}
   const send=make('button','Poproś o kontrakty');send.type='button';send.className='primary';
   const status=make('p');status.setAttribute('role','status');const result=make('div');result.setAttribute('aria-live','polite');
   const memory=make('details'),memoryTitle=make('summary','Pamięć Wędrowca · lokalna');
@@ -42,7 +44,7 @@ import {contractXP} from './kael-contracts.js';
   memorySave.onclick=()=>storeMemory(false);memoryClear.onclick=()=>storeMemory(true);
   memory.append(memoryTitle,make('p','Zapis w archiwum gry, także w szyfrowanej kopii. Pamięć lokalna nie jest osobno szyfrowana. Wpisuj tylko informacje, które chcesz zachować. Nie wpisuj danych osób trzecich, haseł ani informacji medycznych.'),label('Profil i doświadczenie',profile),label('Cele',goals),label('Preferencje i ograniczenia',preferences),memoryDraft,memorySave,memoryClear,memoryStatus);
   const sharing=make('section');sharing.append(label('Dołącz zapisaną pamięć do tej wizyty (Kael może zaproponować zmiany)',shareMemory),label('Dołącz maks. 4 aktywne i 4 ukończone zadania',shareHistory),make('p','Podgląd dodatkowych danych. W trybie OPENAI wiadomość i zaznaczone dane trafią do API. Dane nie są wysyłane przy samym zapisie.'),preview);
-  section.append(title,close,note,label('Token testowy (nie klucz OpenAI)',token),label('Zapamiętaj po poprawnej autoryzacji',remember),forget,verify,connection,memory,sharing,label('Wiadomość',msg),label('Dostępne minuty',mins),send,status,result);dialog.append(section);document.body.append(dialog);
+  section.append(title,close,note,label('Token testowy (nie klucz OpenAI)',token),label('Zapamiętaj po poprawnej autoryzacji',remember),forget,verify,connection,memory,sharing,label('Wiadomość',msg),label('Dostępne minuty',mins),price,send,status,result);dialog.append(section);document.body.append(dialog);
   let busy=false, saving=false, generation=0, opening=0, checking=false, vaultBusy=false;
   dialog.style.maxHeight='85dvh';dialog.style.overflowY='auto';
   async function saveRemembered(t){
@@ -69,7 +71,7 @@ import {contractXP} from './kael-contracts.js';
   }
   button.onclick=async()=>{
     if(dialog.open||busy||saving||checking||vaultBusy)return;
-    const o=++opening;populate(readKaelMemory());shareMemory.checked=shareHistory.checked=false;memoryStatus.textContent='';refreshPreview();dialog.showModal();vaultBusy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;
+    const o=++opening;populate(readKaelMemory());shareMemory.checked=shareHistory.checked=false;memoryStatus.textContent='';refreshPreview();showPrice();dialog.showModal();vaultBusy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;
     try{const r=await vault.readToken();if(o===opening&&dialog.open){token.value=r.token||'';remember.checked=!!r.token;}}
     catch{if(o===opening)connection.textContent='Nie udało się odczytać tokena. Możesz wpisać go ręcznie.'}
     finally{vaultBusy=false;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=false;}
@@ -94,6 +96,10 @@ import {contractXP} from './kael-contracts.js';
     const http=cap.Plugins?.CapacitorHttp;
     if(!http?.request){status.textContent='Brak natywnego modułu CapacitorHttp.';return;}
     const ctx=context();if(JSON.stringify(ctx)!==JSON.stringify(JSON.parse(preview.textContent))){refreshPreview();status.textContent='Kontekst się zmienił. Sprawdź podgląd i ponownie zatwierdź.';return;}
+    const startedAt=Date.now(),offer=kaelVisitOffer(startedAt);showPrice();
+    if(!offer.allowed){status.textContent='Brak Pieczęci. Kolejna darmowa wizyta jutro.';return;}
+    if(offer.kind==='seal'&&!confirm('Wydać 1 Pieczęć Gildii za poprawną odpowiedź Kaela?'))return;
+    const receipt=crypto.randomUUID();
     busy=true;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=true;status.textContent='Łączenie z Kaelem…';const g=++generation, started=performance.now();
     try{
       const r=await http.request({url:'http://127.0.0.1:8787/v1/guild/consult',method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},data:{message:m,availableMinutes:n,context:ctx},connectTimeout:5000,readTimeout:60000,disableRedirects:true,responseType:'json'});
@@ -102,6 +108,8 @@ import {contractXP} from './kael-contracts.js';
       const b=typeof r.data==='string'?JSON.parse(r.data):r.data;
       if(b?.schema!=='pathfinder-guild-response-v1'||!['mock','openai'].includes(b.mode)||b.npc!=='kael'||typeof b.dialogue!=='string'||!Array.isArray(b.contracts)||b.contracts.length>3||(!Number.isFinite(b.usage?.apiCost)||b.usage.apiCost<0||(b.mode==='mock'&&b.usage.apiCost!==0)||(b.mode==='openai'&&b.usage.currency!=='USD'))||!b.contracts.every(c=>c&&typeof c.title==='string'&&typeof c.action==='string'&&typeof c.completion==='string'&&Number.isInteger(c.minutes)&&c.minutes>0)||b.contracts.reduce((s,c)=>s+c.minutes,0)>n){status.textContent='Nieprawidłowa odpowiedź testowa.';return;}
       const elapsed=((performance.now()-started)/1000).toFixed(1);
+      try{await settleKaelVisit(receipt,startedAt,offer.kind)}catch{status.textContent='Odpowiedź AI dotarła, ale rozliczenie lokalne nie powiodło się. Nie pokazano kontraktów. Sprawdź archiwum. Zapytanie mogło wygenerować koszt API.';return;}
+      showPrice();
       const warning=await saveRemembered(t);
       if(g!==generation)return;
       result.append(make('p',b.dialogue));
@@ -151,7 +159,7 @@ import {contractXP} from './kael-contracts.js';
         };
       }
       status.textContent=b.mode==='mock'?'OK — odpowiedź MOCK · koszt API: 0 zł':'OK — OPENAI · szac. '+b.usage.apiCost.toFixed(6)+' USD · pozostałe próby: '+b.usage.remainingAttempts;
-      status.textContent+=' · '+elapsed+' s'+warning;
+      status.textContent+=' · '+elapsed+' s · '+(offer.kind==='free'?'wizyta darmowa':'wydano 1 Pieczęć')+warning;
     }catch{if(g===generation)status.textContent='Nie udało się połączyć. Sprawdź serwer, USB i adb reverse.';}
     finally{busy=false;send.disabled=verify.disabled=forget.disabled=token.disabled=remember.disabled=false;}
   };
