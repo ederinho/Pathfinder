@@ -1,0 +1,38 @@
+/* Awakening: bundled vector art, consistent visual-novel stage and service screens. */
+#world .world-scene{min-height:240px;display:flex;flex-direction:column;justify-content:flex-end;padding:24px 20px;background-size:cover;background-position:center;isolation:isolate;text-shadow:0 2px 8px #000}
+#world .world-scene::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#100e13f5 0%,#17121ac4 40%,#17121a22 100%);z-index:-1}
+#world .world-guild{background-image:url('./awakening-art/guild.svg')}
+#world .world-hall{background-image:url('./awakening-art/hall.svg')}
+#world .world-market{background-image:url('./awakening-art/market.svg')}
+#world .world-sanctuary{background-image:url('./awakening-art/sanctuary.svg')}
+#world .world-archive{background-image:url('./awakening-art/archive.svg')}
+#world .world-road{background-image:url('./awakening-art/road.svg')}
+#world .world-chamber{background-image:url('./awakening-art/chamber.svg')}
+#world .world-symbol{font-size:29px;margin-bottom:4px}
+#world .world-story{background:linear-gradient(135deg,#392c25,#211b20);padding:16px;border:1px solid #a88d5b;border-radius:10px;margin:12px 0;box-shadow:inset 0 0 25px #0005}
+#world .world-story h3{margin:8px 0;color:#e5c99a;font-family:Georgia,serif}
+#world .world-story p{color:#ded0b8;font-size:13px}
+.vn-stage.awakening-stage{display:flex;align-items:flex-end;justify-content:center;background-position:center;background-size:cover;position:relative;overflow:hidden;isolation:isolate;min-height:190px}
+.awakening-stage::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#181219a8,transparent 45%);z-index:-1;pointer-events:none}
+.awakening-stage[data-art=hall]{background-image:url('./awakening-art/hall.svg')}
+.awakening-stage[data-art=market]{background-image:url('./awakening-art/market.svg')}
+.awakening-stage[data-art=sanctuary]{background-image:url('./awakening-art/sanctuary.svg')}
+.awakening-stage[data-art=archive]{background-image:url('./awakening-art/archive.svg')}
+.awakening-stage[data-art=road]{background-image:url('./awakening-art/road.svg')}
+.awakening-stage[data-art=chamber]{background-image:url('./awakening-art/chamber.svg')}
+.awakening-stage[data-art=guild]{background-image:url('./awakening-art/guild.svg')}
+.awakening-portrait{width:min(48vw,260px);height:auto;max-height:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 8px 16px #000a);align-self:flex-end}
+.pf-vn .vn-stage.awakening-stage{flex:1 0 210px;min-height:210px}
+.pf-story .vn-top .vn-choice{width:auto;font-size:12px;min-height:44px}
+.pf-story .vn-line{min-height:3.5em}
+.pf-vn .vn-panel{background:linear-gradient(160deg,#272020f8,#19151dfb);border-color:#af9361}
+/* Same controls and transaction code as before; just a different presentation. */
+dialog.awakening-service{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;box-sizing:border-box;border:0;border-radius:0;background:#17131a;color:#eadbc5;overflow-y:auto}
+dialog.awakening-service>section{width:min(100%,760px);box-sizing:border-box;margin:0 auto;padding:14px 16px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(150deg,#2c2426,#17131b 55%);border:none;border-radius:0}
+.awakening-service .awakening-stage{height:clamp(170px,33vh,300px);margin:-14px -16px 14px;border-bottom:1px solid #9c8257}
+.awakening-service h3{color:#e4c890;font:600 24px Georgia,serif;margin:10px 0}
+.awakening-service details{border:1px solid #67533e;border-radius:8px;margin:10px 0;padding:9px}
+.awakening-service .awakening-speech{border:1px solid #9a7d51;border-left:4px solid #c7a46b;padding:12px;border-radius:8px;background:#261f27;line-height:1.55;overflow-wrap:anywhere}
+.awakening-service .awakening-speech h4{color:#dec08a;margin:0 0 8px;font-family:Georgia,serif}
+.awakening-service textarea{max-width:100%;box-sizing:border-box}
+@media(prefers-reduced-motion:reduce){.awakening-stage,.awakening-portrait{animation:none!important;transition:none!important}}

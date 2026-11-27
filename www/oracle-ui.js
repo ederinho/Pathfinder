@@ -1,3 +1,4 @@
+import {decorateService} from './awakening-art-921.js';
 import {readOracle,oracleOffer,startOracle,finishOracle,eraseOracle,saveOracleTurn,saveOracleMemory,acceptOracleCampaign} from './app-921.js';
 import {validTurn,ORACLE_MAX} from './oracle-921.js';
 const cap=window.Capacitor;
@@ -7,7 +8,7 @@ if(cap?.isNativePlatform?.()&&cap.getPlatform()==='android'){
  const el=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
  const btn=(text,fn)=>{const e=el('button',text);e.type='button';e.onclick=fn;return e};
  const label=(text,e)=>{const l=el('label',text);l.append(e);return l};
- const open=btn('Wyrocznia · test AI',show);open.id='oracleWorldEntry';menu.append(open);
+ const open=btn('Wyrocznia · konsultacja',show);open.id='oracleWorldEntry';menu.append(open);
  const d=el('dialog');d.id='oracleDialog';d.setAttribute('aria-label','Wyrocznia');const section=el('section');d.append(section);document.body.append(d);
  let busy=false,token='',share=false,draft='',status='',pending=null;
  const vault=cap.Plugins?.PathfinderDevToken||cap.registerPlugin?.('PathfinderDevToken');
@@ -16,13 +17,13 @@ if(cap?.isNativePlatform?.()&&cap.getPlatform()==='android'){
  d.oncancel=e=>{if(busy)e.preventDefault()};d.onclose=()=>{token='';draft='';share=false;section.replaceChildren();};
  async function change(fn,success){if(busy)return;lock(true);try{await fn();status=success}catch{status='Nie udało się zapisać. Sprawdź archiwum i spróbuj ponownie.'}finally{busy=false;draw()}}
  function draw(){
-  const o=readOracle(),s=o.session,offer=oracleOffer();section.replaceChildren(el('h3','Wyrocznia'),el('p','— Nie widzę twojej przyszłości. Mogę jednak pomóc ci dostrzec drogi, których jeszcze nie rozważyłeś.'));
+  const o=readOracle(),s=o.session,offer=oracleOffer();section.replaceChildren(decorateService(d,'sanctuary','oracle'),el('h3','Wyrocznia'),el('p','— Nie widzę twojej przyszłości. Mogę jednak pomóc ci dostrzec drogi, których jeszcze nie rozważyłeś.'));
   const close=btn('Zamknij · zachowaj rozmowę',()=>{if(!busy)d.close()});section.append(close,el('p','Test USB. Tryb OPENAI wysyła wiadomość oraz dotychczasowy dialog tej sesji do zewnętrznego API. MOCK również rozlicza wizyty. Nie wpisuj sekretów ani danych innych osób.'));
   section.append(el('p','Odłamki: '+offer.shards+' · Nowa konsultacja: '+(offer.kind==='free'?'darmowa w tym tygodniu':'1 Odłamek')+' · Tydzień od poniedziałku.'));
   const mem=el('details'),m=el('textarea');m.maxLength=600;m.rows=3;m.value=o.memory;const check=el('input');check.type='checkbox';check.checked=share;check.style.width='auto';check.onchange=()=>{share=check.checked;};mem.append(el('summary','Prywatna pamięć Wyroczni'),label('Zapis lokalny (niezależny od Kaela)',m),btn('Zapisz pamięć',()=>change(()=>saveOracleMemory(m.value),'Pamięć zapisana.')),btn('Usuń pamięć',()=>{if(confirm('Usunąć pamięć Wyroczni? Stare kopie pozostają bez zmian.'))change(()=>saveOracleMemory(''),'Pamięć usunięta.')}));section.append(mem,label('Dołącz zapisaną pamięć Wyroczni do kolejnej wiadomości',check));
-  const auth=el('input');auth.type='password';auth.maxLength=64;auth.autocomplete='off';auth.value=token;auth.oninput=()=>{token=auth.value.trim()};section.append(label('Token testowy (z Keystore, jeśli zapisany u Kaela)',auth));
+  const auth=el('input');auth.type='password';auth.maxLength=64;auth.autocomplete='off';auth.value=token;auth.oninput=()=>{token=auth.value.trim()};const technical=el('details');technical.open=!token;technical.append(el('summary','Autoryzacja (USB)'),label('Token testowy (z Keystore, jeśli zapisany u Kaela)',auth));section.append(technical);
   if(s){section.append(el('h4','Konsultacja · '+s.turns.length+'/'+ORACLE_MAX+(s.closed?' · zakończona':'')));for(const [i,t] of s.turns.entries()){
-   const row=el('article');row.append(el('small','Wędrowiec'),el('p',t.message),el('small','Wyrocznia'),el('p',t.dialogue));
+   const row=el('article');row.className='awakening-speech';row.append(el('small','Wędrowiec'),el('p',t.message),el('small','Wyrocznia'),el('p',t.dialogue));
    if(t.campaign){row.append(el('h4','Propozycja: '+t.campaign.name),el('p',t.campaign.description));for(const step of t.campaign.steps)row.append(el('p','• '+step));const b=btn(s.campaignSaved?'Kampania już przyjęta':'Przyjmij kampanię',()=>{if(confirm('Dodać kampanię do Bestiariusz → Kampanie?'))change(()=>acceptOracleCampaign(s.id,i),'Kampania zapisana. Bez natychmiastowej nagrody.')});b.disabled=s.campaignSaved;row.append(b)}
    if(t.memory){const edit=el('textarea');edit.rows=3;edit.maxLength=600;edit.value=t.memory;row.append(label('Proponowana pamięć (sprawdź i popraw przed zapisaniem)',edit),btn('Zatwierdź pamięć',()=>{if(confirm('Zastąpić aktualną pamięć Wyroczni tą treścią?'))change(()=>saveOracleMemory(edit.value),'Pamięć zatwierdzona.')}));}
    section.append(row);
