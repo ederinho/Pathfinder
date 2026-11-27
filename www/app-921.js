@@ -1,3 +1,4 @@
+import {makeKaelQuests,appendKaelQuests} from './kael-contracts.js';
 import {renderMonsters} from './bestiary-921.js';
 import {renderChronicle} from './chronicle-921.js';
 import {questArt,questInstructions,closeQuest} from './guild-921.js';
@@ -113,3 +114,17 @@ normalizeOrigins(data);
 let showOriginsWelcome=!data.origins.seen&&!data.log.length&&!data.quests.length&&!data.profile.name&&!data.profile.portrait&&!(data.reports||[]).length;
 
 setTimeout(()=>{$('splash').remove();if(showOriginsWelcome&&!document.querySelector('dialog[open]'))originsEditor(true)},1600);fillProfile();let lastDay=day();setInterval(()=>{if(day()!==lastDay){lastDay=day();render()}},1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()});render();tick();setInterval(tick,1000);
+
+
+// PF_KAEL_CONTRACT_ENGINE_1 — commit through the existing archive, not a second store.
+export async function acceptKaelContracts(visit,chosen,availableMinutes){
+ if(restoring)throw Error('archive_busy');
+ const quests=makeKaelQuests(visit,chosen,availableMinutes,day());
+ restoring=true;
+ try{
+   await flushArchive();
+   const next=validateBackup(appendKaelQuests(structuredClone(data),quests));
+   await persist(next);data=next;journalView='quests';
+ }finally{restoring=false}
+ try{render();window.scrollTo(0,0)}catch(e){console.error('Kael: saved, redraw failed',e?.name||'Error')}
+}
