@@ -1,0 +1,19 @@
+/* Living World: locally rendered wayfinding, no external assets. */
+#world .world-breadcrumb{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:1px;color:#b5a28a;margin:0 0 10px}
+#world .world-breadcrumb button{width:auto;font-size:12px;min-height:40px;padding:7px 12px}
+#world .world-scene{position:relative;text-align:center;padding:30px 17px 24px;border:1px solid #8c704b;border-radius:12px;background:radial-gradient(ellipse at 50% 16%,#6c4c2d55,transparent 64%),linear-gradient(155deg,#30241e,#17151a 72%);box-shadow:inset 0 0 32px #0009;margin-bottom:12px;overflow:hidden}
+#world .world-sanctuary{background:radial-gradient(ellipse at 50% 15%,#70518b55,transparent 65%),linear-gradient(155deg,#342a40,#17151a 72%)}
+#world .world-market{background:radial-gradient(ellipse at 50% 15%,#9d713b55,transparent 65%),linear-gradient(155deg,#49331e,#17151a 72%)}
+#world .world-archive{background:radial-gradient(ellipse at 50% 15%,#526c7155,transparent 65%),linear-gradient(155deg,#263437,#17151a 72%)}
+#world .world-symbol{font-size:48px;color:#d5ba80;line-height:1.15;margin-bottom:12px;text-shadow:0 0 24px #bf955e70}
+#world .world-kicker{color:#d5ba80;letter-spacing:2px;font-size:10px}
+#world .world-title{font-size:clamp(23px,6vw,30px);margin:10px 0;color:#f0dbb7}
+#world .world-scene p{color:#d0c2ae;line-height:1.55;margin:10px auto 0;max-width:360px}
+#world .world-actions,#world .world-routes{display:grid;gap:8px;margin:12px 0;padding:12px;background:#211c1b;border:1px solid #514336;border-radius:10px}
+#world .world-actions h3,#world .world-routes h3{margin:0 0 4px;color:#d5ba80;font-size:15px}
+#world .world-action,#world .world-route{width:100%;min-height:54px;text-align:left;border-color:#715c43;background:#302720;color:#f1dec0;padding:10px 13px}
+#world .world-action:disabled{opacity:.5}
+#world .world-route{display:grid;grid-template-columns:30px 1fr 18px;align-items:center;gap:8px}
+#world .world-route-symbol{font-size:23px;text-align:center;color:#d5ba80}#world .world-arrow{font-size:24px;color:#b5a28a;text-align:right}
+#world .world-note{font-size:12px;line-height:1.5}
+main>nav button{min-width:0;padding-inline:1px;font-size:10px;overflow-wrap:normal}

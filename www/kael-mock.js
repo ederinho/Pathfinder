@@ -8,7 +8,7 @@ import {contractXP} from './kael-contracts.js';
   const menu=document.querySelector('.journal-menu');
   if(!menu) return;
   const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
-  const button=make('button','Kael · test AI');button.type='button';menu.append(button);
+  const button=make('button','Kael · test AI');button.type='button';button.id='kaelWorldEntry';menu.append(button);
   const dialog=make('dialog');dialog.setAttribute('aria-label','Test spotkania z Kaelem');
   const section=make('section'), title=make('h3','Kael — Mistrz Gildii');
   const close=make('button','Zamknij');close.type='button';

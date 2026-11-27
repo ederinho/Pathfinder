@@ -7,7 +7,7 @@ if(cap?.isNativePlatform?.()&&cap.getPlatform()==='android'){
  const el=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
  const btn=(text,fn)=>{const e=el('button',text);e.type='button';e.onclick=fn;return e};
  const label=(text,e)=>{const l=el('label',text);l.append(e);return l};
- const open=btn('Wyrocznia · test AI',show);menu.append(open);
+ const open=btn('Wyrocznia · test AI',show);open.id='oracleWorldEntry';menu.append(open);
  const d=el('dialog');d.id='oracleDialog';d.setAttribute('aria-label','Wyrocznia');const section=el('section');d.append(section);document.body.append(d);
  let busy=false,token='',share=false,draft='',status='',pending=null;
  const vault=cap.Plugins?.PathfinderDevToken||cap.registerPlugin?.('PathfinderDevToken');
