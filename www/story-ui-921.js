@@ -14,6 +14,6 @@ function draw(){stop();const s=readStory(),n=storyNodes[s.node];d.dataset.theme=
  function tap(){if(busy)return;if(!revealed){reveal();return}if(following)next(null)}
  d.onclick=e=>{if(e.target.closest('button,a,input,textarea,select,label,[role=button]'))return;tap()};
  function reveal(){if(revealed)return;revealed=true;stop();line.textContent=full;if(following){hint.textContent='Dalej ›';return}hint.textContent=s.finished?'Koniec prologu':'Wybierz odpowiedź';hint.disabled=true;choicesAt=performance.now()+450;if(s.finished)actions.append(btn('Wróć do Gildii',()=>{if(performance.now()>=choicesAt)exit()}));else for(const [i,c] of n.choices.entries())actions.append(btn(c.label,()=>{if(performance.now()>=choicesAt)next(i)}))}
- if(window.matchMedia('(prefers-reduced-motion: reduce)').matches||document.body.classList.contains('fx-off'))reveal();else timer=setInterval(()=>{shown=Math.min(units.length,shown+2);line.textContent=units.slice(0,shown).join('');if(shown>=units.length)reveal()},22);
+ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches||(document.body.classList.contains('fx-off')||document.body.classList.contains('living-battery')))reveal();else timer=setInterval(()=>{shown=Math.min(units.length,shown+2);line.textContent=units.slice(0,shown).join('');if(shown>=units.length)reveal()},22);
 }
 export function openStory(onClose){if(d.open)return;refresh=onClose;draw();d.showModal()}

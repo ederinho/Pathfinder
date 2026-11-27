@@ -23,7 +23,7 @@ let current='guild';
 try{const stored=localStorage.getItem('pathfinder-world-location-v1');if(Object.hasOwn(locations,stored)&&(stored!=='road'||readStory().finished))current=stored}catch{}
 let mapOpen='region',travelTimer=null;
 function canTravel(id){return Object.hasOwn(locations,id)&&(id!=='road'||readStory().finished)}
-function motion(){return !window.matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.body.classList.contains('fx-off')}
+function motion(){return !window.matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.body.classList.contains('fx-off')&&!document.body.classList.contains('living-battery')}
 function cancelTravel(){if(travelTimer!==null)clearTimeout(travelTimer);travelTimer=null;root.classList.remove('world-leaving');root.removeAttribute('aria-busy');root.querySelectorAll('.map-pin').forEach(b=>{b.disabled=b.dataset.locked==='true'})}
 function transition(target,enter){if(travelTimer!==null)return;const finish=()=>{cancelTravel();enter();if(motion())root.querySelector('.world-map,.world-scene')?.animate?.([{opacity:.3,transform:'scale(1.025)'},{opacity:1,transform:'scale(1)'}],{duration:440,easing:'cubic-bezier(.2,.65,.2,1)'})};if(!motion()||!mapOpen){finish();return}const map=root.querySelector('.world-map');if(map&&target){const r=map.getBoundingClientRect(),b=target.getBoundingClientRect();map.style.transformOrigin=`${b.left+b.width/2-r.left}px ${b.top+b.height/2-r.top}px`};root.setAttribute('aria-busy','true');root.querySelectorAll('.map-pin').forEach(b=>b.disabled=true);root.classList.add('world-leaving');travelTimer=setTimeout(finish,350)}
 function remember(id){current=id;try{localStorage.setItem('pathfinder-world-location-v1',id)}catch{}}
