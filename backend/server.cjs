@@ -3,7 +3,7 @@
 const http = require('node:http');
 const { randomBytes, timingSafeEqual } = require('node:crypto');
 const assert = require('node:assert/strict');
-const {makeProvider,selfTest:aiSelfTest}=require('./openai-provider.cjs');
+const {makeProvider,selfTest:aiSelfTest,usageSummary}=require('./openai-provider.cjs');
 const HOST = '127.0.0.1';
 const MAX_BYTES = 16384;
 function response(res, status, body) {
@@ -31,11 +31,16 @@ function fixture(minutes) {
   if(minutes>=10) contracts.push({id:'mock-2',title:'Ślad na szlaku',action:'Wykonaj mały krok w stronę zapisanego celu.',minutes:Math.min(20,minutes-5),completion:'Zapisano wykonany krok.'});
   return {schema:'pathfinder-guild-response-v1',mode:'mock',npc:'kael',dialogue:'— Zanim ruszysz dalej, wybierz cel i wykonaj pierwszy krok.',contracts,usage:{inputTokens:0,outputTokens:0,apiCost:0}};
 }
-function makeServer(token, provider=null) {
+function makeServer(token, provider=null, usageReader=usageSummary) {
   const server=http.createServer({requestTimeout:15000,headersTimeout:10000},async(req,res)=>{
     // Reject browser cross-origin requests. Native integration is a later step.
     if(req.headers.origin) return response(res,403,{error:'origin_not_allowed'});
     if(req.url==='/health' && req.method==='GET') return response(res,200,{ok:true,service:'pathfinder',mode:provider?'openai':'mock'});
+    if(req.url==='/v1/dev/status'&&req.method==='GET'){
+      if(!authenticated(req,token))return response(res,401,{error:'unauthorized'});
+      try{return response(res,200,{ok:true,service:'pathfinder',mode:provider?'openai':'mock',usage:usageReader()})}
+      catch{return response(res,503,{error:'ledger_unavailable'})}
+    }
     if(req.url!=='/v1/guild/consult') return response(res,404,{error:'not_found'});
     if(req.method!=='POST') return response(res,405,{error:'method_not_allowed'});
     if(!authenticated(req,token)) return response(res,401,{error:'unauthorized'});
@@ -51,12 +56,14 @@ function makeServer(token, provider=null) {
 }
 async function selfTest() {
   const token=randomBytes(32).toString('hex');
-  const server=makeServer(token);
+  const server=makeServer(token,null,()=>({attempts:1,recordedResponses:1,estimatedUsd:0.001}));
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,HOST,resolve)});
   const base=`http://${HOST}:${server.address().port}`;
   const call=(input,auth=token,extra={})=>fetch(base+'/v1/guild/consult',{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+auth}:{}),...extra},body:JSON.stringify(input)});
   try {
     let r=await fetch(base+'/health'); assert.equal(r.status,200); assert.equal((await r.json()).mode,'mock'); console.log('OK - HEALTH');
+    r=await fetch(base+'/v1/dev/status');assert.equal(r.status,401);await r.text();
+    r=await fetch(base+'/v1/dev/status',{headers:{Authorization:'Bearer '+token}});assert.equal(r.status,200);assert.equal((await r.json()).usage.attempts,1);console.log('OK - AUTHENTICATED READ-ONLY STATUS');
     r=await call({message:'Test',availableMinutes:30},null);assert.equal(r.status,401);await r.text();console.log('OK - AUTH REQUIRED');
     r=await call({message:'Test',availableMinutes:30},'incorrect');assert.equal(r.status,401);await r.text();
     r=await call({message:'Test',availableMinutes:30},token,{Origin:'https://example.com'});assert.equal(r.status,403);await r.text();console.log('OK - ORIGIN BLOCKED');
