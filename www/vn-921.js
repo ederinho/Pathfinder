@@ -1,3 +1,4 @@
+import {replacePortrait} from './visual-assets-v01.js';
 import {sceneArtwork} from './awakening-art-921.js';
 import {readStory,readBeyond,recordEncounter} from './app-921.js';
 import {scenes} from './vn-scenes-921.js';
@@ -16,7 +17,9 @@ d.addEventListener('cancel',e=>{e.preventDefault();exit()});
 function render(){
  stop();const s=scenes[active],n=s.nodes[cursor.node],pilot=active==='kaelWorldEntry',introducing=pilot&&entranceIndex!==null;save();d.classList.toggle('pf-dialog-pilot',pilot);d.dataset.theme=s.theme;const previousStage=d.querySelector('.vn-stage');
  const top=el('header',undefined,'vn-top'),leave=btn('Wróć do świata',()=>exit(),'vn-exit');if(pilot){leave.textContent='Wyjdź';leave.setAttribute('aria-label','Opuść rozmowę i wróć do świata')}top.append(el('span',s.location,'vn-location'),leave);
- const portrait=introducing?null:s.portrait,sceneKey=s.theme+':'+portrait;const stage=previousStage?.dataset.sceneKey===sceneKey?previousStage:sceneArtwork(s.theme,portrait);stage.dataset.sceneKey=sceneKey;
+ const portrait=introducing?null:s.portrait,sceneKey=s.theme+':'+portrait;const stage=previousStage?.dataset.sceneKey===sceneKey?previousStage:sceneArtwork(s.theme,portrait);
+ if(stage!==previousStage && pilot && portrait==='kael')replacePortrait(stage,'kael');
+ stage.dataset.sceneKey=sceneKey;
  const panel=el('section',undefined,'vn-panel');panel.classList.toggle('pilot-narrator',introducing);const title=el('h2',introducing?'Narrator':s.name,'vn-speaker');const line=el('p','','vn-line');line.setAttribute('aria-label',n.lines[cursor.line]);const actions=el('div',undefined,'vn-choices');actions.setAttribute('aria-label','Odpowiedzi');
  const count=readStory().encounters[s.npc]||0,known=count>0;full=known&&cursor.node===s.start&&cursor.line===0&&s.returning?s.returning:n.lines[cursor.line];if(active==='kaelWorldEntry'&&cursor.node===s.start&&cursor.line===0&&readBeyond().chapter.finished)full='Witaj z powrotem. Wieści z Brzezin dotarły do Gildii. Dobrze, że mieszkańcy mogą znów liczyć dni.';if(introducing)full=entrance[entranceIndex];const pages=pilot?dialoguePages(full):[full];pageIndex=Math.min(pageIndex,pages.length-1);full=pages[pageIndex];line.setAttribute('aria-label',full);units=Array.from(full);shown=0;
  let revealed=false,choicesAt=Infinity;const morePages=pageIndex+1<pages.length;const following=morePages||introducing?true:advance(s,cursor);

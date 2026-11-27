@@ -1,3 +1,4 @@
+import {visualIcon} from './visual-assets-v01.js';
 import {activeOrigin,scopedVault} from './server-921.js';
 import {setupScene,heading as sceneHeading,speech,quickReplies,chapterButton,fold,personas} from './living-characters-921.js';
 import {readOracle,oracleOffer,startOracle,finishOracle,eraseOracle,saveOracleTurn,saveOracleMemory,acceptOracleCampaign,latestApprovedChapter} from './app-921.js';
@@ -9,7 +10,7 @@ if(cap?.isNativePlatform?.()&&cap.getPlatform()==='android'){
  const el=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
  const btn=(text,fn)=>{const e=el('button',text);e.type='button';e.onclick=fn;return e};
  const label=(text,e)=>{const l=el('label',text);l.append(e);return l};
- const open=btn('Wyrocznia · konsultacja',show);open.id='oracleWorldEntry';menu.append(open);
+ const open=btn('Wyrocznia · konsultacja',show);open.id='oracleWorldEntry';open.prepend(visualIcon('resources-consultation-token',null,'visual-control-icon'));menu.append(open);
  const d=el('dialog');d.id='oracleDialog';d.setAttribute('aria-label','Wyrocznia');const section=el('section');d.append(setupScene(d,'oracle'),section);document.body.append(d);
  let metrics='',busy=false,token='',share=false,draft='',status='',pending=null,lastShown='',authOpen=false,historyOpen=false,memOpen=false,shareOpen=false;
  let origin=activeOrigin(),vault=scopedVault(cap,origin);

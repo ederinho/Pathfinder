@@ -1,0 +1,325 @@
+/* Asset Pack v0.1. Layout, controls and state continue to come from the game. */
+:root {
+  --visual-night: #121415;
+  --visual-iron: #292d30;
+  --visual-brass: #81704d;
+  --visual-burgundy: #492522;
+  --visual-paper: #c6ae8b;
+  --visual-cream: #ede3d0;
+  --visual-amber: #e4ad65;
+  --visual-blue: #273840;
+  --visual-green: #33412c;
+  --visual-rim: inset 0 0 0 2px #121415aa, 0 3px 8px #0007;
+  --visual-button: radial-gradient(ellipse at 50% 34%, #41403b 0%, #2b2a26 54%, #18191a 100%);
+  --visual-primary: radial-gradient(ellipse at 50% 36%, #785735, #4c3826 65%, #291f1a);
+  --visual-panel: linear-gradient(155deg, #292d30f0, #171a1bef), var(--visual-textures-iron, none);
+  --visual-vellum: radial-gradient(ellipse at 40% 37%, #e8d7b9f7, #d9c09aee 64%, #c6ae8be6),
+    var(--visual-textures-parchment-light, none);
+}
+
+body {
+  color: var(--visual-cream);
+  background: radial-gradient(ellipse at 50% 0, #282925ed, #121415f4 80%),
+    var(--visual-textures-stone, none), var(--visual-night);
+}
+
+main > header {
+  min-height: 63px;
+  padding: 7px 6px;
+  border-bottom: 1px solid #81704d91;
+  background: linear-gradient(90deg, #171818e8, #282822eb 42%, #171818e8),
+    var(--visual-textures-leather-black, none);
+}
+main > header h1 {
+  color: var(--visual-cream);
+  text-shadow: 0 2px 3px #000;
+}
+main > header .settings-gear { width: 48px; height: 48px; border-radius: 6px; padding: 8px; }
+
+.visual-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  vertical-align: middle;
+  line-height: 1;
+}
+.visual-icon-fallback { display: inline-grid; place-items: center; font-style: normal; }
+.visual-icon .visual-icon-image { display: none; width: 100%; height: 100%; object-fit: contain; margin: 0; }
+.visual-icon[data-art-ready] > .visual-icon-image { display: block; }
+.visual-icon[data-art-ready] > .visual-icon-fallback { display: none; }
+.visual-control-icon:not([data-art-ready]) { display: none; }
+.visual-brand { width: 42px; height: 42px; }
+.visual-brand img { border-radius: 5px; }
+#splash .visual-brand { width: min(40vw, 162px); height: min(40vw, 162px); }
+#splash:has(.visual-brand[data-art-ready]) h1 {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+#splash { background: radial-gradient(ellipse at 50% 35%, #2f2920, var(--visual-night) 70%); }
+main > nav {
+  background: linear-gradient(#242522f0, #121415f7), var(--visual-textures-leather-black, none);
+  border-top-color: var(--visual-brass);
+  align-items: stretch;
+}
+main > nav button span.visual-icon { width: 27px; height: 27px; }
+main > nav button.active, main > nav button[data-tab=world].active {
+  color: #ffe8b9;
+  background: radial-gradient(ellipse at 50% 38%, #66502d, #28241e 75%);
+  box-shadow: inset 0 -2px var(--visual-amber);
+}
+main > nav button[data-tab=world] {
+  border-radius: 6px 6px 3px 3px;
+  min-height: 57px;
+  transform: none;
+  box-shadow: none;
+}
+main > nav button[data-tab=world] span.visual-icon { width: 29px; height: 29px; }
+
+#journal .journal-heading {
+  min-height: clamp(108px, 31vw, 165px);
+  padding: 14px;
+  align-items: flex-start;
+  border: 1px solid var(--visual-brass);
+  box-shadow: var(--visual-rim);
+  background: linear-gradient(0deg, #121415f7, #12141544 76%, #12141526),
+    var(--visual-guild-hall, none) center 45% / cover no-repeat,
+    url('./art-direction/archive.webp') center / cover;
+}
+#journal .journal-heading :is(small,h2) { color: var(--visual-cream); text-shadow: 0 2px 4px #000; }
+#world .world-hall {
+  background-image: var(--visual-guild-hall, none), url('./art-direction/hall.webp');
+  background-position: center;
+  background-size: cover;
+}
+
+#guildWallet, #character .attribute-row, #character .character-description,
+#journey :is(.book-cover, article), #history :is(article, .book-cover), #settingsDialog > section {
+  background: var(--visual-panel);
+  border-color: var(--visual-brass);
+  box-shadow: var(--visual-rim);
+}
+#guildWallet {
+  padding: 12px;
+  background: linear-gradient(145deg, #211e19ed, #151719f7), var(--visual-textures-wood, none);
+}
+#guildWallet .guild-wallet-tile {
+  border: 1px solid #81704d86;
+  background: linear-gradient(#30302bea,#222220f6), var(--visual-textures-brass, none);
+}
+.guild-wallet-tile strong { display: flex; align-items: center; justify-content: center; gap: 5px; }
+.visual-resource { width: 23px; height: 23px; }
+.visual-attribute { width: 34px; height: 34px; }
+.overhaul-stat .visual-attribute { flex: none; width: 23px; height: 23px; }
+.visual-attribute img, .visual-resource img { border-radius: 3px; }
+
+#journal .journal-menu button, #character .character-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px;
+  color: var(--visual-cream);
+  font-size: .76rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+#journal .journal-menu button { flex: 1 1 43%; }
+#character .character-nav button { flex: 1 1 30%; }
+.visual-control-icon { width: 22px; height: 22px; margin-inline-end: 4px; }
+:is(.journal-menu, .character-nav) .visual-control-icon { margin: 0; }
+:is(#gearInfo, #titlesInfo, #closeEditor, .close-red) .visual-icon-image { max-width: 23px; max-height: 23px; }
+#settingsOpen .visual-icon-image { border-radius: 4px; }
+
+#guildWallet button, #journal .journal-menu button, #character .character-nav button, #newQuest,
+#world .world-action:not(.map-return), #world .atlas-chapter-action, #character .overhaul-stats-link,
+#journey button, #history button, #settingsDialog button, #editor button,
+#offers .paper button, #quests .paper button, #contractDetail button:not(.quest-close),
+dialog.lc-scene :is(.primary,.lc-choice) {
+  min-height: 48px;
+  color: var(--visual-cream);
+  border: 1px solid var(--visual-brass);
+  border-radius: 5px;
+  background: var(--visual-button), var(--visual-textures-leather-black, none);
+  box-shadow: var(--visual-rim);
+  text-shadow: 0 1px 2px #000d;
+}
+#journal .journal-menu .selected, #character .character-nav .selected,
+#newQuest, #editor button.primary, #contractDetail button.primary, dialog.lc-scene button.primary {
+  color: #fff0d3;
+  background: var(--visual-primary);
+  border-color: var(--visual-amber);
+}
+#journal .journal-menu [aria-pressed=true], #character .character-nav [aria-pressed=true] {
+  outline: 1px solid #dfaf71;
+  outline-offset: -4px;
+}
+#contractDetail .quest-close, #settingsDialog .close-red, #editor #closeEditor, #editor #cancel {
+  min-height: 48px;
+  background: radial-gradient(ellipse at 50% 35%, #663b35, var(--visual-burgundy) 65%, #2d211f);
+  border-color: #ac776a;
+  color: var(--visual-cream);
+}
+#contractDetail .quest-close { width: 48px; }
+#journal .journal-menu button:disabled, #settingsDialog button:disabled,
+#contractDetail button:disabled, dialog.lc-scene button:disabled {
+  background: #27292b;
+  color: #cec6b8;
+  border-color: #65666a;
+  box-shadow: none;
+  opacity: .68;
+}
+
+#offers .papergrid .paper, #quests .papergrid .paper, #quests .activegrid .paper, #contractDetail .paper {
+  background: var(--visual-vellum), var(--visual-paper);
+  color: #302419;
+  border-color: #a3845c;
+}
+#contractDetail .paper { padding-top: 56px; }
+#contractDetail .story { color: #35291d; }
+#contractDetail .deadline.urgent, #contractDetail .urgent { color: #642c2b; }
+#contractDetail input[type=checkbox] { width: 24px; height: 24px; accent-color: #506642; }
+
+#settingsDialog label:has(input[type=checkbox]), dialog.lc-scene label:has(input[type=checkbox]) {
+  min-height: 48px;
+  padding-block: 6px;
+}
+:is(#settingsDialog,#editor,#chronicler,#forgeDialog,dialog.lc-scene)
+  :is(input:not([type=checkbox],[type=file],[type=range]), select, textarea) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  color: var(--visual-cream);
+  background-color: #171a1b;
+  border-color: var(--visual-brass);
+  font-size: 16px;
+}
+body input[type=checkbox] { accent-color: #aa824a; min-width: 22px; min-height: 22px; }
+
+body :is(button, summary, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--visual-amber);
+  outline-offset: 2px;
+}
+body progress {
+  appearance: none;
+  display: block;
+  height: 11px;
+  border: 1px solid var(--visual-brass);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--visual-night);
+}
+body progress::-webkit-progress-bar { background: #1a1b1b; }
+body progress::-webkit-progress-value { background: linear-gradient(#e0b978, #9a7444); }
+body progress::-moz-progress-bar { background: linear-gradient(#e0b978, #9a7444); }
+
+body #notice {
+  color: var(--visual-cream);
+  border: 1px solid #7f9ba6;
+  background: var(--visual-blue);
+}
+body #notice:where(.level, .award) { border-color: #98a982; background: var(--visual-green); }
+body #notice::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 6px;
+  vertical-align: middle;
+  background: var(--visual-system-message, none) center / contain no-repeat;
+}
+body #notice:where(.level, .award)::before { background-image: var(--visual-system-check, none); }
+#contractDetail .urgent::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  background: var(--visual-system-warning, none) center / contain no-repeat;
+}
+#archiveRetry::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+  background: var(--visual-system-plus, none) center / contain no-repeat;
+}
+
+/* SVG frames are decoration over a complete CSS surface. */
+#journal .journal-menu button, #character .character-nav button {
+  position: relative;
+  --visual-frame: var(--visual-frames-neutral, none);
+}
+#journal .journal-menu .selected, #character .character-nav .selected {
+  --visual-frame: var(--visual-frames-active, none);
+}
+#journal .journal-menu button:disabled, #character .character-nav button:disabled {
+  --visual-frame: var(--visual-frames-disabled, none);
+}
+#journal .journal-menu button::after, #character .character-nav button::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 1px;
+  background: var(--visual-frame) center / 100% 100% no-repeat;
+  opacity: .65;
+}
+#contractDetail .quest-close { background-image: var(--visual-frames-danger, none), radial-gradient(ellipse, #663b35, #2d211f); background-size: 100% 100%; }
+body #notice:where(.level, .award) { background-image: var(--visual-frames-success, none); background-size: 100% 100%; }
+#character .overhaul-section-heading, #history > h2 {
+  background: linear-gradient(#262321d9, #121415fa), var(--visual-textures-banner, none);
+}
+#journey .book-cover {
+  background: linear-gradient(#252119ef, #171717f0), var(--visual-textures-leather-brown, none);
+}
+
+/* Keep the existing scrollable compact scene and overlay the new materials. */
+dialog.lc-scene.pf-dialog-pilot .lc-stage {
+  background-image: var(--visual-guild-hall, none), url('./art-direction/hall.webp');
+}
+dialog.lc-scene.pf-dialog-pilot .lc-stage .visual-portrait { height: 100%; }
+dialog.pf-dialog-pilot .vn-panel, dialog.lc-scene.pf-dialog-pilot > section {
+  background: linear-gradient(#292d30e8, #121415ed), var(--visual-textures-iron, none);
+}
+dialog.pf-dialog-pilot .vn-line, dialog.lc-scene.pf-dialog-pilot .lc-speech {
+  background: var(--visual-vellum), var(--visual-paper);
+  background-clip: padding-box;
+}
+dialog.lc-scene:not(.pf-dialog-pilot) > section {
+  background: linear-gradient(#191d20e9, #121415f4), var(--visual-textures-leather-black, none);
+}
+dialog#settingsDialog, dialog#editor, dialog#contractDetail {
+  max-height: min(calc(100dvh - 24px), 90dvh);
+  overscroll-behavior: contain;
+}
+@media (max-height: 480px) {
+  dialog.lc-scene.pf-dialog-pilot .lc-stage { flex-basis: 78px; }
+}
+
+:is(#journal .journal-menu, #character .character-nav, #contractDetail, #settingsDialog, dialog.lc-scene)
+  button:active:not(:disabled) {
+  filter: brightness(.85);
+}
+.archive-footer.archive-ok { color: #b1bf9c; }
+dialog.pf-dialog-pilot .vn-stage[data-art=hall] {
+  background-image: var(--visual-guild-hall, none), url('./art-direction/hall.webp');
+}
+dialog.pf-dialog-pilot .vn-stage .visual-portrait {
+  left: 2%; width: 54%; object-fit: contain; object-position: left bottom;
+}
+dialog.pf-dialog-pilot .vn-line, dialog.lc-scene.pf-dialog-pilot .lc-speech {
+  border: 1px solid #977a53;
+  border-image: none;
+  border-radius: 3px;
+}
+#contractDetail button.visual-confirm:not(:disabled) {
+  background: radial-gradient(ellipse at 50% 35%, #536346, var(--visual-green) 65%, #232c21);
+  border-color: #9bad8b;
+}
+#contractDetail button.visual-danger:not(:disabled) {
+  background: radial-gradient(ellipse at 50% 35%, #663b35, var(--visual-burgundy) 65%, #2d211f);
+  border-color: #ac776a;
+}

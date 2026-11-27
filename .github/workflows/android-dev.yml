@@ -1,0 +1,196 @@
+name: Pathfinder Dev APK
+
+'on':
+  push:
+    branches: [feature/visual-integration-v0.1]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.repository == 'ederinho/Pathfinder'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install locked npm dependencies
+        run: npm ci
+      - name: Run project tests and verify web asset integrity
+        env:
+          PATHFINDER_AI_MODE: mock
+        run: |
+          node scripts/test-dialogue-pilot.cjs
+          node scripts/test-living-characters.cjs
+          node scripts/test-living-chronicle.cjs
+          node backend/server.cjs --self-test
+          node backend/server.cjs --ai-self-test
+          node scripts/build-android.cjs --check-only
+      - &android-sdk
+        name: Install Android SDK packages
+        run: |
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "${ANDROID_HOME:-<unset>}" "${ANDROID_SDK_ROOT:-<unset>}"
+          sdk_root=
+          sdkmanager=
+          for root in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}"; do
+            [[ -n "$root" && -d "$root" && -w "$root" ]] || continue
+            sdk_root=${sdk_root:-$root}
+            for candidate in "$root/cmdline-tools/latest/bin/sdkmanager" "$root"/cmdline-tools/*/bin/sdkmanager; do
+              if [[ -x "$candidate" ]]; then
+                sdk_root=$root
+                sdkmanager=$candidate
+                break 2
+              fi
+            done
+          done
+          sdk_root=${sdk_root:-$RUNNER_TEMP/android-sdk}
+
+          if [[ -z "$sdkmanager" ]]; then
+            staging=$(mktemp -d "$RUNNER_TEMP/android-cli.XXXXXX")
+            trap 'rm -rf -- "$staging"' EXIT
+            archive="$staging/command-line-tools.zip"
+            # Command-Line Tools 19.0 and its checksum from Google's SDK repository metadata.
+            curl --fail --silent --show-error --location --retry 3 \
+              https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+              --output "$archive"
+            printf '%s  %s\n' 5fdcc763663eefb86a5b8879697aa6088b041e70 "$archive" | sha1sum --check
+            unzip -q "$archive" -d "$staging"
+            mkdir -p "$sdk_root/cmdline-tools"
+            cli_dir="$sdk_root/cmdline-tools/latest"
+            if [[ -e "$cli_dir" || -L "$cli_dir" ]]; then
+              cli_dir=$(mktemp -d "$sdk_root/cmdline-tools/ci-19.0.XXXXXX")
+              rmdir "$cli_dir"
+            fi
+            mv -T "$staging/cmdline-tools" "$cli_dir"
+            sdkmanager="$cli_dir/bin/sdkmanager"
+          fi
+
+          export ANDROID_HOME="$sdk_root" ANDROID_SDK_ROOT="$sdk_root"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk_root" "$sdk_root" >> "$GITHUB_ENV"
+          printf '%s\n' "${sdkmanager%/*}" >> "$GITHUB_PATH"
+          printf 'Using sdkmanager: %s\n' "$sdkmanager"
+          "$sdkmanager" --sdk_root="$sdk_root" --version
+          # sdkmanager can close stdin early. The pipeline should report its status.
+          (set +o pipefail; yes | "$sdkmanager" --sdk_root="$sdk_root" --licenses)
+          "$sdkmanager" --sdk_root="$sdk_root" 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Sync Capacitor and verify web assets
+        run: |
+          npx --no-install cap sync android
+          while IFS= read -r -d '' source; do
+            cmp "$source" "android/app/src/main/assets/public/${source#www/}"
+          done < <(git ls-files -z -- www/)
+      - name: Test and build Dev for signing
+        working-directory: android
+        run: |
+          bash ./gradlew --no-daemon :app:testDevUnitTest
+          bash ./gradlew --no-daemon :app:assembleDev
+          mkdir -p "$RUNNER_TEMP/dev-signing-input"
+          cp app/build/outputs/apk/dev/app-dev.apk "$RUNNER_TEMP/dev-signing-input/input.bin"
+          cd "$RUNNER_TEMP/dev-signing-input"
+          sha256sum input.bin > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pathfinder-dev-signing-input
+          path: ${{ runner.temp }}/dev-signing-input/
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 1
+
+  sign:
+    needs: build
+    if: github.repository == 'ederinho/Pathfinder' && github.ref == 'refs/heads/feature/visual-integration-v0.1'
+    permissions: {}
+    environment: pathfinder-dev-signing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - *android-sdk
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: pathfinder-dev-signing-input
+          path: ${{ runner.temp }}/dev-signing-input
+      - name: Check Dev application identity and align APK
+        run: |
+          cd "$RUNNER_TEMP/dev-signing-input"
+          digest=$(awk 'NR == 1 && NF == 2 && $2 == "input.bin" {print $1}' SHA256SUMS)
+          [[ "$digest" =~ ^[a-f0-9]{64}$ ]]
+          printf '%s  %s\n' "$digest" input.bin | sha256sum --check
+          tools="$ANDROID_HOME/build-tools/35.0.0"
+          badging=$("$tools/aapt" dump badging input.bin)
+          package_line=$(sed -n '/^package: /p' <<< "$badging")
+          grep -Eq "^package: name='com[.]ederinho[.]pathfinder[.]dev' versionCode='[1-9][0-9]*'" <<< "$package_line"
+          [[ "$badging" == *"application-label:'Pathfinder Dev'"* ]]
+          python3 - <<'PYCODE'
+          import json
+          from zipfile import ZipFile
+
+          with ZipFile('input.bin') as apk:
+              config = json.loads(apk.read('assets/capacitor.config.json'))
+          assert config['appId'] == 'com.ederinho.pathfinder.dev', config
+          PYCODE
+          printf '%s\n' "$package_line" > package.txt
+          "$tools/zipalign" -P 16 -f 4 input.bin aligned.apk
+      - name: Sign with the persistent Dev certificate and verify output
+        env:
+          DEV_KEYSTORE_B64: ${{ secrets.PATHFINDER_DEV_KEYSTORE_B64 }}
+          DEV_STORE_PASSWORD: ${{ secrets.PATHFINDER_DEV_STORE_PASSWORD }}
+          DEV_KEY_PASSWORD: ${{ secrets.PATHFINDER_DEV_KEY_PASSWORD }}
+          DEV_KEY_ALIAS: ${{ vars.PATHFINDER_DEV_KEY_ALIAS }}
+          EXPECTED_CERT: ${{ vars.PATHFINDER_DEV_CERT_SHA256 }}
+        run: |
+          umask 077
+          [[ -n "$DEV_KEYSTORE_B64" && -n "$DEV_STORE_PASSWORD" && -n "$DEV_KEY_PASSWORD" && -n "$DEV_KEY_ALIAS" ]]
+          expected=${EXPECTED_CERT,,}
+          [[ "$expected" =~ ^[a-f0-9]{64}$ ]]
+          temp=$(mktemp -d "$RUNNER_TEMP/dev-keystore.XXXXXX")
+          trap 'rm -rf -- "$temp"' EXIT
+          keystore="$temp/dev.keystore"
+          printf '%s' "$DEV_KEYSTORE_B64" | base64 --decode > "$keystore"
+          unset DEV_KEYSTORE_B64
+          signer=$(keytool -exportcert -keystore "$keystore" -alias "$DEV_KEY_ALIAS" \
+            -storepass:env DEV_STORE_PASSWORD | sha256sum)
+          [[ "${signer%% *}" == "$expected" ]]
+          tools="$ANDROID_HOME/build-tools/35.0.0"
+          work="$RUNNER_TEMP/dev-signing-input"
+          output="$RUNNER_TEMP/pathfinder-dev"
+          mkdir "$output"
+          "$tools/apksigner" sign --ks "$keystore" --ks-key-alias "$DEV_KEY_ALIAS" \
+            --ks-pass env:DEV_STORE_PASSWORD --key-pass env:DEV_KEY_PASSWORD \
+            --v4-signing-enabled false --out "$output/Pathfinder-Dev.apk" "$work/aligned.apk"
+          rm -- "$keystore"
+          unset DEV_STORE_PASSWORD DEV_KEY_PASSWORD DEV_KEY_ALIAS
+
+          "$tools/apksigner" verify --verbose --print-certs "$output/Pathfinder-Dev.apk" > "$output/certificate.txt"
+          actual=$(sed -nE 's/^Signer #[0-9]+ certificate SHA-256 digest: ([0-9a-fA-F]+)$/\1/p' "$output/certificate.txt")
+          [[ "${actual,,}" == "$expected" ]]
+          "$tools/zipalign" -c -P 16 4 "$output/Pathfinder-Dev.apk"
+          badging=$("$tools/aapt" dump badging "$output/Pathfinder-Dev.apk")
+          [[ "$(sed -n '/^package: /p' <<< "$badging")" == "$(cat "$work/package.txt")" ]]
+          [[ "$badging" == *"application-label:'Pathfinder Dev'"* ]]
+          (cd "$output" && sha256sum Pathfinder-Dev.apk > Pathfinder-Dev.apk.sha256)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Pathfinder-Dev-${{ github.run_number }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pathfinder-dev/
+          if-no-files-found: error
+          retention-days: 14
