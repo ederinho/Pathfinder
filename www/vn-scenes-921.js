@@ -3,7 +3,7 @@ const end={label:'Zakończ rozmowę',end:true};
 const back={label:'Wróć do rozmowy',to:'intro'};
 export const scenes={
  kaelWorldEntry:{name:'Kael',location:'Sala Gildii',theme:'hall',symbol:'⚔',npc:'kael',portrait:'kael',returning:'Witaj ponownie, Wędrowcze. Ogień nadal płonie.',start:'intro',nodes:{
- intro:{lines:['Witaj, Wędrowcze. Nie każda droga wymaga pośpiechu.','Co sprowadza cię dzisiaj do Gildii?'],choices:[{label:'Chcę zaplanować dzień.',to:'plan'},{label:'Jak działa Gildia?',to:'about'},{label:'Porozmawiaj o naszej znajomości.',to:'bond',requires:3},end]},
+ intro:{lines:['Witaj, Wędrowcze. Nie każda droga wymaga pośpiechu.','Gildia nie może obiecać nikomu łatwej drogi. Możemy jednak pomóc ci wybrać następny krok. Nieważne, czy szukasz pracy, rady, czy po prostu chwili wytchnienia.\n\nPowiedz mi, co sprowadza cię dzisiaj do Gildii?'],choices:[{label:'Chcę zaplanować dzień.',to:'plan'},{label:'Jak działa Gildia?',to:'about'},{label:'Porozmawiaj o naszej znajomości.',to:'bond',requires:3},end]},
  plan:{lines:['Powiedz mi, ile masz czasu i czego potrzebujesz. Poszukamy właściwego kontraktu.'],choices:[{label:'Przejdź do konsultacji AI',service:'kaelWorldEntry'},back,end]},
  bond:{lines:['Znam już twoje kroki przez próg Gildii. Wciąż to ty wybierasz, jaką drogą pójdziesz.'],choices:[back,end]},
  about:{lines:['Zlecenia są sposobem na stawianie kolejnych kroków. To ty wybierasz, które przyjąć.','Nie musisz wykonywać wszystkiego naraz.'],choices:[back,end]}}},

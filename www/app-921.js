@@ -156,6 +156,8 @@ export async function acceptKaelContracts(visit,chosen,availableMinutes){
 
 
 // PF_MEMORY_V1 — local archive, only explicit context sharing.
+// Only approved personal chapters; callers must explicitly request sharing.
+export function latestApprovedChapter(){const rows=(data.book?.chapters||[]).slice().sort((a,b)=>b.week.localeCompare(a.week));return rows.length?{title:rows[0].title,prose:rows[0].prose}:null}
 export function readKaelMemory(){return {...(data.kaelMemory||{profile:'',goals:'',preferences:''})}}
 export function kaelProfileDraft(){return {profile:String(data.profile?.description||'').slice(0,600),goals:String(data.origins?.currentGoals||data.origins?.goals||'').slice(0,600)}}
 export function kaelHistory(){const clip=s=>String(s||'').slice(0,100);return {active:data.quests.filter(q=>!completion(q)).slice(-4).map(q=>clip(q.name)),completed:[...data.log].sort((a,b)=>b.time-a.time).slice(0,4).map(q=>clip(q.name))}}
