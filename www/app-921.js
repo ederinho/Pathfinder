@@ -1,3 +1,4 @@
+import {offerOracle,newOracle,appendOracle,addOracleCampaign} from './oracle-921.js';
 import {contractGold,rewardCampaign,wallet,shop,purchase,equip,visitOffer,recordVisit,canUndo} from './economy-921.js';
 import {makeKaelQuests,appendKaelQuests} from './kael-contracts.js';
 import {renderMonsters} from './bestiary-921.js';
@@ -176,3 +177,13 @@ function openMerchant(){
 }
 export function kaelVisitOffer(time=Date.now()){return {...visitOffer(data,time),seals:wallet(data).seals}}
 export async function settleKaelVisit(id,time,kind){await economyCommit(n=>recordVisit(n,id,time,kind))}
+
+// Oracle: same durable archive transaction as guild purchases.
+export function readOracle(){return structuredClone(data.oracle)}
+export function oracleOffer(t=Date.now()){return {...offerOracle(data,wallet(data).shards,t),shards:wallet(data).shards}}
+export async function startOracle(id,t){await economyCommit(n=>newOracle(n,id,t))}
+export async function finishOracle(id){await economyCommit(n=>{if(n.oracle.session?.id!==id)return false;n.oracle.session.closed=true;return true})}
+export async function eraseOracle(id){await economyCommit(n=>{if(n.oracle.session?.id!==id)return false;n.oracle.session=null;return true})}
+export async function saveOracleTurn(payload){await economyCommit(n=>appendOracle(n,payload,wallet(n).shards))}
+export async function saveOracleMemory(value){await economyCommit(n=>{n.oracle.memory=value;return true})}
+export async function acceptOracleCampaign(id,index){await economyCommit(n=>addOracleCampaign(n,id,index))}

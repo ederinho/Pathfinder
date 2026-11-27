@@ -28,8 +28,8 @@ export function rewardCampaign(d,c,time=Date.now()){
 export function wallet(d){
  const contracts=d.log.filter(l=>l.guildGold!==undefined).sort((a,b)=>a.time-b.time);
  const campaigns=d.economy?.campaignAwards||[], purchases=d.economy?.purchases||[], visits=d.economy?.visits||[];
- return {gold:contracts.reduce((n,l)=>n+l.guildGold,0)-purchases.reduce((n,p)=>n+item(p.id).price,0),seals:Math.floor(contracts.length/5)-visits.filter(v=>v.kind==='seal').length,shards:Math.floor(contracts.length/20)+campaigns.length,contracts:contracts.length,
- transactions:[...contracts.map((l,i)=>({name:l.name,time:l.time,gold:l.guildGold,seals:(i+1)%5===0?1:0,shards:(i+1)%20===0?1:0})),...campaigns.map(a=>({name:'Kampania: '+a.name,time:a.time,gold:0,seals:0,shards:1})),...purchases.map(p=>({name:'Zakup: '+item(p.id).name,time:p.time,gold:-item(p.id).price,seals:0,shards:0})),...visits.map(v=>({name:'Wizyta u Kaela ('+(v.kind==='free'?'darmowa':'Pieczęć')+')',time:v.time,gold:0,seals:v.kind==='seal'?-1:0,shards:0}))].sort((a,b)=>b.time-a.time)};
+ return {gold:contracts.reduce((n,l)=>n+l.guildGold,0)-purchases.reduce((n,p)=>n+item(p.id).price,0),seals:Math.floor(contracts.length/5)-visits.filter(v=>v.kind==='seal').length,shards:Math.floor(contracts.length/20)+campaigns.length-(d.oracle?.receipts||[]).filter(r=>r.kind==='shard').length,contracts:contracts.length,
+ transactions:[...contracts.map((l,i)=>({name:l.name,time:l.time,gold:l.guildGold,seals:(i+1)%5===0?1:0,shards:(i+1)%20===0?1:0})),...campaigns.map(a=>({name:'Kampania: '+a.name,time:a.time,gold:0,seals:0,shards:1})),...purchases.map(p=>({name:'Zakup: '+item(p.id).name,time:p.time,gold:-item(p.id).price,seals:0,shards:0})),...(d.oracle?.receipts||[]).map(r=>({name:'Wyrocznia ('+(r.kind==='free'?'darmowa':'Odłamek')+')',time:r.time,gold:0,seals:0,shards:r.kind==='shard'?-1:0})),...visits.map(v=>({name:'Wizyta u Kaela ('+(v.kind==='free'?'darmowa':'Pieczęć')+')',time:v.time,gold:0,seals:v.kind==='seal'?-1:0,shards:0}))].sort((a,b)=>b.time-a.time)};
 }
 
 // v0.13.1 — local cosmetic purchases and successful consultations.
@@ -49,7 +49,7 @@ function validateSpending(d){
  for(const p of e.purchases){if(!p||!item(p.id)||owned.has(p.id)||!timestamp(p.time))fail();owned.add(p.id)}
  if(e.equipped!==null&&!owned.has(e.equipped))fail();
  for(const v of e.visits){if(!v||!visitId(v.id)||ids.has(v.id)||!timestamp(v.time)||typeof v.day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v.day)||!['free','seal'].includes(v.kind))fail();ids.add(v.id);if(v.kind==='free'){if(days.has(v.day))fail();days.add(v.day)}else if(!days.has(v.day))fail()}
- const b=wallet(d);if(b.gold<0||b.seals<0)fail();
+ const b=wallet(d);if(b.gold<0||b.seals<0||b.shards<0)fail();
 }
 export function purchase(d,id,time=Date.now()){
  const p=item(id),e=d.economy;if(!p||e.purchases.some(x=>x.id===id)||wallet(d).gold<p.price)return false;
@@ -66,4 +66,4 @@ export function recordVisit(d,id,time,kind){
  const offer=visitOffer(d,time);if(!offer.allowed||offer.kind!==kind)return false;
  e.visits.push({id,time,day:offer.day,kind});return true;
 }
-export function canUndo(d,entry){const next={...d,log:d.log.filter(l=>l!==entry)},b=wallet(next);return b.gold>=0&&b.seals>=0}
+export function canUndo(d,entry){const next={...d,log:d.log.filter(l=>l!==entry)},b=wallet(next);return b.gold>=0&&b.seals>=0&&b.shards>=0}

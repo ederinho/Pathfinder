@@ -4,6 +4,7 @@ const http = require('node:http');
 const { randomBytes, timingSafeEqual } = require('node:crypto');
 const assert = require('node:assert/strict');
 const {makeProvider,selfTest:aiSelfTest,usageSummary,validateContext}=require('./openai-provider.cjs');
+const oracle=require('./oracle-protocol.cjs');
 const HOST = '127.0.0.1';
 const MAX_BYTES = 16384;
 function response(res, status, body) {
@@ -15,11 +16,11 @@ function authenticated(req, token) {
   const b = Buffer.from('Bearer ' + token);
   return a.length === b.length && timingSafeEqual(a,b);
 }
-async function readJson(req) {
+async function readJson(req, max=MAX_BYTES) {
   let size=0, chunks=[];
   for await (const chunk of req) {
     size += chunk.length;
-    if (size>MAX_BYTES) { const err = new Error('payload_too_large'); err.status=413; throw err; }
+    if (size>max) { const err = new Error('payload_too_large'); err.status=413; throw err; }
     chunks.push(chunk);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
@@ -41,13 +42,15 @@ function makeServer(token, provider=null, usageReader=usageSummary) {
       try{return response(res,200,{ok:true,service:'pathfinder',mode:provider?'openai':'mock',usage:usageReader()})}
       catch{return response(res,503,{error:'ledger_unavailable'})}
     }
-    if(req.url!=='/v1/guild/consult') return response(res,404,{error:'not_found'});
+    const isOracle=req.url==='/v1/oracle/consult', max=isOracle?32768:MAX_BYTES;
+    if(!isOracle&&req.url!=='/v1/guild/consult') return response(res,404,{error:'not_found'});
     if(req.method!=='POST') return response(res,405,{error:'method_not_allowed'});
     if(!authenticated(req,token)) return response(res,401,{error:'unauthorized'});
     if(!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type']||'')) return response(res,415,{error:'json_required'});
-    if(Number(req.headers['content-length'])>MAX_BYTES) return response(res,413,{error:'payload_too_large'});
+    if(Number(req.headers['content-length'])>max) return response(res,413,{error:'payload_too_large'});
     try {
-      const input=await readJson(req);
+      const input=await readJson(req,max);
+      if(isOracle){const v=oracle.validateOracle(input);return response(res,200,provider?await provider({...v,npc:'oracle'}):oracle.fixture(v));}
       if(!input || typeof input!=='object' || Array.isArray(input) || typeof input.message!=='string' || !input.message.trim() || input.message.length>2000 || !Number.isInteger(input.availableMinutes) || input.availableMinutes<0 || input.availableMinutes>240) return response(res,400,{error:'invalid_input'});
       input.context=validateContext(input.context);
       return response(res,200,provider?await provider(input):fixture(input.availableMinutes,input));
