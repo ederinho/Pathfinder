@@ -25,11 +25,11 @@ async function readJson(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
   catch { const err = new Error('invalid_json'); err.status=400; throw err; }
 }
-function fixture(minutes) {
+function fixture(minutes,input={}) {
   const contracts=[];
   if(minutes>=1) contracts.push({id:'mock-1',title:'Pierwszy krok',action:'Zapisz jeden konkretny cel na dzisiaj.',minutes:Math.min(5,minutes),completion:'Jeden cel zapisany.'});
   if(minutes>=10) contracts.push({id:'mock-2',title:'Ślad na szlaku',action:'Wykonaj mały krok w stronę zapisanego celu.',minutes:Math.min(20,minutes-5),completion:'Zapisano wykonany krok.'});
-  return {schema:'pathfinder-guild-response-v1',mode:'mock',npc:'kael',dialogue:'— Zanim ruszysz dalej, wybierz cel i wykonaj pierwszy krok.',contracts,usage:{inputTokens:0,outputTokens:0,apiCost:0}};
+  return {schema:'pathfinder-guild-response-v1',mode:'mock',npc:'kael',dialogue:'— Zanim ruszysz dalej, wybierz cel i wykonaj pierwszy krok.',contracts,memoryUpdates:input.context?.memory&&input.message==='TEST PAMIĘCI: moim nowym celem jest nauka gry na gitarze.'&&input.context.memory.goals!=='Nauka gry na gitarze.'?[{field:'goals',value:'Nauka gry na gitarze.',evidence:input.message}]:[],usage:{inputTokens:0,outputTokens:0,apiCost:0}};
 }
 function makeServer(token, provider=null, usageReader=usageSummary) {
   const server=http.createServer({requestTimeout:15000,headersTimeout:10000},async(req,res)=>{
@@ -50,7 +50,7 @@ function makeServer(token, provider=null, usageReader=usageSummary) {
       const input=await readJson(req);
       if(!input || typeof input!=='object' || Array.isArray(input) || typeof input.message!=='string' || !input.message.trim() || input.message.length>2000 || !Number.isInteger(input.availableMinutes) || input.availableMinutes<0 || input.availableMinutes>240) return response(res,400,{error:'invalid_input'});
       input.context=validateContext(input.context);
-      return response(res,200,provider?await provider(input):fixture(input.availableMinutes));
+      return response(res,200,provider?await provider(input):fixture(input.availableMinutes,input));
     } catch(err) { if(!res.destroyed && !res.headersSent) response(res,err.status||500,{error:err.status?err.message:'internal_error'}); }
   });
   return server;
@@ -74,6 +74,9 @@ async function selfTest() {
     r=await call({message:'Test',availableMinutes:30,context:{memory:{profile:'x'.repeat(601),goals:'',preferences:''}}});assert.equal(r.status,400);await r.text();
     r=await call({message:'Test',availableMinutes:30,context:{diary:'private'}});assert.equal(r.status,400);await r.text();
     r=await call({message:'Test',availableMinutes:30,context:{memory:{profile:'Test',goals:'Test',preferences:''},history:{active:['A'],completed:['B']}}});assert.equal(r.status,200);await r.text();console.log('OK - MEMORY INPUT VALIDATION');
+    const testMsg='TEST PAMIĘCI: moim nowym celem jest nauka gry na gitarze.';
+    r=await call({message:testMsg,availableMinutes:0});assert.deepEqual((await r.json()).memoryUpdates,[]);
+    r=await call({message:testMsg,availableMinutes:0,context:{memory:{profile:'',goals:'Stary cel',preferences:''}}});assert.equal((await r.json()).memoryUpdates[0].field,'goals');console.log('OK - MOCK MEMORY PROPOSALS');
     for(const n of [0,1,5,9,10,15,30,60,240]) {
       r=await call({message:'Synthetic test only',availableMinutes:n});assert.equal(r.status,200);const b=await r.json();assert.equal(b.mode,'mock');assert.equal(b.usage.apiCost,0);assert.ok(b.contracts.length<=3);assert.ok(b.contracts.reduce((s,c)=>s+c.minutes,0)<=n);
     }
