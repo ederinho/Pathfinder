@@ -1,0 +1,1 @@
+document.getElementById('checkUpdate').disabled=true;document.getElementById('updateStatus').textContent='Aktualizacje przez instalacje nowego APK.';

@@ -1,0 +1,14 @@
+node_modules/
+pathfinder-code-before-backup-fix-*/
+.gradle/
+.idea/
+build/
+local.properties
+android/app/src/main/assets/public/
+.env
+.env.*
+*.jks
+*.keystore
+*.apk
+*.aab
+pathfinder-backup*.json
