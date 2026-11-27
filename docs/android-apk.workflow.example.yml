@@ -1,0 +1,66 @@
+# Propozycja do przeglądu. GitHub nie uruchamia workflow z docs/.
+name: Pathfinder Android APK
+
+'on':
+  pull_request:
+    branches: [living-characters]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug-apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install locked npm dependencies
+        run: npm ci
+      - name: Run project tests and verify web asset integrity
+        env:
+          PATHFINDER_AI_MODE: mock
+        run: |
+          node scripts/test-dialogue-pilot.cjs
+          node scripts/test-living-characters.cjs
+          node scripts/test-living-chronicle.cjs
+          node backend/server.cjs --self-test
+          node backend/server.cjs --ai-self-test
+          node scripts/build-android.cjs --check-only
+      - name: Install Android SDK packages
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Sync Capacitor and verify copied web sources
+        run: |
+          npx --no-install cap sync android
+          while IFS= read -r -d '' source; do
+            cmp "$source" "android/app/src/main/assets/public/${source#www/}"
+          done < <(git ls-files -z -- www/)
+      - name: Run Android unit tests and build debug APK
+        working-directory: android
+        run: bash ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+      - name: Verify debug signature and prepare artifact
+        run: |
+          mkdir -p apk-artifact
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk-artifact/
+          cd apk-artifact
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs app-debug.apk > certificate.txt
+          sha256sum app-debug.apk > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pathfinder-debug-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apk-artifact/
+          if-no-files-found: error
+          retention-days: 14
