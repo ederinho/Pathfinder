@@ -1,4 +1,4 @@
-// Graphics selected from Pathfinder Asset Pack v0.1. Keys describe UI roles.
+// Graphics selected from the Pathfinder asset packs. Keys describe UI roles.
 const assetPaths = Object.freeze({
   'attributes-strength': 'icons/attributes/attr_strength.webp',
   'attributes-endurance': 'icons/attributes/attr_endurance.webp',
@@ -57,12 +57,27 @@ const assetPaths = Object.freeze({
   'mark': 'brand/mark.webp',
 });
 
+const guildAssetPaths = Object.freeze({
+  'guild-hall-mobile': 'guild-hall-mobile.webp',
+  'guild-tile-board': 'guild-tile-contract-board.webp',
+  'guild-tile-ledger': 'guild-tile-quest-ledger.webp',
+  'frames-forged': 'frame-forged-nine-slice.webp',
+  'shell-journal': 'nav-journal.webp',
+  'shell-character': 'nav-character.webp',
+  'shell-chronicle': 'nav-chronicle.webp',
+  'shell-bestiary': 'nav-bestiary.webp',
+  'shell-settings': 'nav-settings.webp',
+});
+
 const attributes = [
   'strength', 'endurance', 'knowledge', 'discipline', 'sport', 'organization',
   'relationships', 'communication', 'mental-health', 'cooking', 'adaptation', 'luck',
 ];
 
 function assetUrl(id) {
+  if (Object.hasOwn(guildAssetPaths, id)) {
+    return new URL('./visual-v02/guild/' + guildAssetPaths[id], import.meta.url).href;
+  }
   return Object.hasOwn(assetPaths, id)
     ? new URL('./visual-v01/' + assetPaths[id], import.meta.url).href
     : null;
@@ -116,8 +131,8 @@ export function replacePortrait(stage, id) {
 }
 
 export function applyStaticArtwork() {
-  for (const id of Object.keys(assetPaths)) {
-    if (id.startsWith('textures-') || id.startsWith('frames-') || id === 'guild-hall'
+  for (const id of [...Object.keys(assetPaths), ...Object.keys(guildAssetPaths)]) {
+    if (id.startsWith('textures-') || id.startsWith('frames-') || id.startsWith('guild-')
       || ['system-check', 'system-plus', 'system-warning', 'system-message'].includes(id)) {
       document.documentElement.style.setProperty('--visual-' + id, 'url("' + assetUrl(id) + '")');
     }
@@ -126,14 +141,11 @@ export function applyStaticArtwork() {
   for (const [selector, id] of Object.entries({
     '#splash': 'logo',
     'main > header': 'mark',
-    'nav [data-tab=journal] > span': 'navigation-journal',
-    'nav [data-tab=character] > span': 'navigation-characters',
-    'nav [data-tab=world] > span': 'navigation-map',
-    'nav [data-tab=history] > span': 'navigation-chronicle',
-    'nav [data-tab=bestiary] > span': 'navigation-bestiary',
-    '#settingsOpen': 'navigation-settings',
-    '#toggleOffers': 'navigation-contracts',
-    '[data-jview=quests]': 'navigation-journal',
+    'nav [data-tab=journal] > span': 'shell-journal',
+    'nav [data-tab=character] > span': 'shell-character',
+    'nav [data-tab=history] > span': 'shell-chronicle',
+    'nav [data-tab=bestiary] > span': 'shell-bestiary',
+    '#settingsOpen': 'shell-settings',
     '[data-jview=journey]': 'navigation-rituals',
     '#chroniclerOpen': 'navigation-chronicle',
     '#livingCampaigns': 'navigation-bestiary',

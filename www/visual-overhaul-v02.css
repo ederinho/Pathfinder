@@ -1,0 +1,230 @@
+/* Shared material system. The World map keeps its authored art and controls. */
+:root {
+  --forge-night: #121415;
+  --forge-iron: #292d30;
+  --forge-brass: #81704d;
+  --forge-wine: #492522;
+  --forge-paper: #c6ae8b;
+  --forge-text: #ede3d0;
+  --forge-edge: inset 0 1px #c6ae8b38, inset 0 -2px #08090a, 0 3px 7px #000a;
+  --forge-control: radial-gradient(ellipse at 50% 27%, #3a3b38, #272828 66%, #17191a);
+  --forge-selected: radial-gradient(ellipse at 50% 29%, #64533b, #383127 66%, #1f1e1b);
+  --forge-leather: linear-gradient(#161817e8,#121415f5), var(--visual-textures-leather-black, none);
+  --forge-metal: linear-gradient(145deg,#292d30e6,#181b1deb), var(--visual-textures-iron, none);
+  --forge-wood: linear-gradient(145deg,#33281ddd,#141516ed), var(--visual-textures-wood, none);
+}
+
+body { color: var(--forge-text); background: var(--forge-leather), var(--forge-night); }
+main > header { background: var(--forge-metal); border-bottom: 2px ridge #6c6044; }
+main > header h1 { letter-spacing: .16em; font-family: Georgia, serif; }
+main > nav {
+  align-items: stretch;
+  gap: 0;
+  background: linear-gradient(#272a2bee,#141617fa), var(--visual-textures-iron, none);
+  border-top: 2px ridge var(--forge-brass);
+}
+main > nav button[data-tab],
+main > nav button[data-tab=world] {
+  min-height: 56px;
+  border: 0;
+  border-radius: 0;
+  border-inline-end: 1px solid #81704d33;
+  background: transparent;
+  box-shadow: none;
+  color: #d2c7b4;
+  text-shadow: 0 1px 2px #000;
+}
+main > nav button .visual-icon-image,
+#settingsOpen .visual-icon-image {
+  border-radius: 0;
+  mask-image: none;
+}
+main > nav button span.visual-icon { width: 32px; height: 32px; }
+main > nav button[data-tab=world] span.visual-icon { width: 32px; height: 32px; }
+main > nav button[data-tab].active {
+  color: var(--forge-text);
+  background: var(--forge-selected);
+  box-shadow: inset 0 -2px #c6ae8b;
+}
+main > nav button.active:not([data-tab=world])::after { display: none; }
+.visual-attribute .visual-icon-image,
+.visual-resource .visual-icon-image {
+  border-radius: 50%;
+  mask-image: radial-gradient(ellipse, #000 49%, #0009 67%, transparent 83%);
+}
+
+body :is(main,dialog) button:not([data-tab], .map-pin, #world *, .quest-close, .close-red, .visual-confirm, .visual-danger, .vn-choice, .vn-exit, .pilot-end, .pilot-exit, .lc-choice):not(:disabled) {
+  background: var(--forge-control);
+  color: var(--forge-text);
+  border: 1px solid var(--forge-brass);
+  box-shadow: var(--forge-edge);
+  text-shadow: 0 1px 2px #000;
+}
+body :is(main,dialog) button:is(.selected,.primary,[aria-pressed=true],[aria-selected=true]):not([data-tab], #world *, .visual-confirm, .visual-danger, .vn-choice, .pilot-end, .lc-choice):not(:disabled) {
+  background: var(--forge-selected);
+  border-color: #b69a70;
+}
+body :is(main,dialog) button:not(#world *):active:not(:disabled) { filter: brightness(.86); }
+body :is(main,dialog) button:not(#world *):focus-visible { outline: 2px solid #e4ad65; outline-offset: 2px; }
+body progress { height: 9px; border: 1px solid var(--forge-brass); background: #111314; }
+body progress::-webkit-progress-value { background: linear-gradient(#c7ab7f,#7e6647); }
+body progress::-moz-progress-bar { background: linear-gradient(#c7ab7f,#7e6647); }
+
+#journal .journal-heading {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(180px, 50vw, 280px);
+  margin-top: 5px;
+  padding: 16px 15px 18px;
+  align-items: start;
+  text-align: left;
+  background:
+    linear-gradient(0deg,#101211d9 0%,#1516124d 30%,transparent 60%),
+    var(--visual-guild-hall-mobile, none) center / cover no-repeat,
+    url('./art-direction/hall.webp') center / cover;
+  border: 3px ridge #81704d;
+  border-radius: 8px 8px 2px 2px;
+  box-shadow: 0 8px 16px #0009;
+}
+#journal .journal-heading small { font: 600 .62rem/1.2 system-ui,sans-serif; letter-spacing: .18em; color: #d2b890; }
+#journal .journal-heading h2 { font: 500 clamp(27px, 7.55vw, 45px)/1.08 Georgia,serif; letter-spacing: -.015em; text-shadow: 0 2px 5px #000; }
+
+#journal #guildWallet {
+  margin: 5px 0 8px;
+  padding: 0 7px;
+  border: 7px solid #6d624b;
+  border-image: var(--visual-frames-forged, none) 40 stretch;
+  background: var(--forge-metal);
+  box-shadow: var(--forge-edge);
+}
+#guildWallet::before, #guildWallet::after { display: none; }
+#guildWallet .guild-wallet-grid { gap: 0; margin: 0; }
+#guildWallet .guild-wallet-tile {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  min-width: 0;
+  padding: 5px 3px;
+  gap: 1px;
+  box-shadow: none;
+}
+#guildWallet .guild-wallet-tile + .guild-wallet-tile { border-inline-start: 1px solid #81704d55; }
+#guildWallet .guild-wallet-tile strong { font-size: 1rem; color: var(--forge-text); }
+#guildWallet .guild-wallet-tile small { color: #c7bdac; font-size: .65rem; }
+#guildWallet .visual-resource { width: 19px; height: 19px; }
+.guild-wallet-tools {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 4px;
+  align-items: start;
+  border-top: 1px solid #81704d55;
+}
+#guildWallet .guild-wallet-details { margin: 0; padding: 0 6px; min-width: 0; border: 0; background: transparent; }
+#guildWallet .guild-wallet-details summary { display: flex; align-items: center; gap: 7px; min-height: 44px; }
+#guildWallet .guild-wallet-details summary::before { content: '›'; font-size: 1.05em; }
+#guildWallet .guild-wallet-details[open] summary::before { transform: rotate(90deg); }
+#guildWallet .guild-wallet-details h3 { margin: 8px 0; font: 600 .88rem Georgia,serif; }
+#guildWallet #merchantWorldEntry { margin: 0; width: auto; min-height: 44px; padding: 6px 9px; font-size: .76rem; }
+
+#journal .journal-menu {
+  display: grid;
+  grid-template-columns: repeat(6,minmax(0,1fr));
+  gap: 5px;
+  padding: 0;
+  margin: 0 0 9px;
+}
+#journal .journal-menu > button {
+  grid-column: span 2;
+  min-height: 52px;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 4px;
+  gap: 3px;
+  flex-wrap: wrap;
+  font: 600 .72rem/1.15 Georgia,serif;
+}
+#journal .journal-menu > #toggleOffers { --guild-tile-art: var(--visual-guild-tile-board, none); }
+#journal .journal-menu > [data-jview=quests] { --guild-tile-art: var(--visual-guild-tile-ledger, none); }
+
+#journal .journal-menu > button:is(#toggleOffers,[data-jview=quests]) {
+  grid-column: span 3;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  min-height: 96px;
+  position: relative;
+  isolation: isolate;
+  align-items: end;
+  padding: 8px 5px 12px;
+  font-size: 1rem;
+  border: 0;
+  background: linear-gradient(0deg,#101110 1%,#1413137a 32%,transparent 64%),
+    var(--guild-tile-art) center / contain no-repeat, var(--forge-wood);
+  box-shadow: 0 3px 7px #000a;
+}
+#journal .journal-menu > button:is(#toggleOffers,[data-jview=quests])[aria-pressed=true] {
+  background: linear-gradient(0deg,#382d1e 1%,#18130d70 33%,transparent 64%),
+    var(--guild-tile-art) center / contain no-repeat, var(--forge-wood);
+  outline: 0;
+}
+#journal .journal-menu .visual-icon-image {
+  border-radius: 50%;
+  mask-image: radial-gradient(ellipse, #000 48%, #000b 62%, transparent 82%);
+}
+#journal .journal-menu > button::after { opacity: .34; }
+#journal .journal-menu > button:is(#toggleOffers,[data-jview=quests])::after { display: none; }
+#journal .journal-menu > button:is(#toggleOffers,[data-jview=quests])[aria-pressed=true]::after {
+  display: block;
+  inset: auto 31% 6px;
+  height: 2px;
+  opacity: 1;
+  background: #e4ad65;
+}
+#journal .journal-menu > button:is(#toggleOffers,[data-jview=quests]):focus-visible {
+  outline: 2px solid #e4ad65;
+  outline-offset: 2px;
+}
+
+#journal #offers {
+  margin: 0;
+  padding: 6px;
+  border: 8px solid #6d5c42;
+  border-image: var(--visual-frames-forged, none) 40 stretch;
+  border-radius: 5px;
+  background: var(--forge-wood);
+}
+#journal #offers > h3 {
+  text-align: left;
+  margin: 2px 0 7px;
+  padding: 5px 3px 7px;
+  border-bottom: 1px solid #81704d8c;
+  color: var(--forge-text);
+  font: 500 clamp(19px,5vw,26px)/1.1 Georgia,serif;
+  text-shadow: 0 1px 2px #000;
+}
+#journal #offers .papergrid { gap: 6px; }
+#journal #offers .papergrid .paper {
+  grid-template-columns: 42px minmax(0,1fr) auto;
+  column-gap: 6px;
+  row-gap: 2px;
+  padding: 8px 7px !important;
+  background: linear-gradient(100deg,#c6ae8be9,#e1cba9f4 64%,#c6ae8bee),
+    var(--visual-textures-parchment-light, none), var(--forge-paper);
+  border: 1px solid #9b805e;
+  box-shadow: inset 0 0 6px #64452c66, 0 3px 7px #0009;
+}
+#journal #offers .papergrid .paper .quest-engraving { width: 40px; height: 40px; }
+#journal #offers .papergrid .paper h3 { font-size: 1rem; line-height: 1.17; }
+#journal #offers .papergrid .paper button { min-height: 44px; margin: 2px 0 0; }
+
+#journal .journal-menu:has(> #kaelWorldEntry + #oracleWorldEntry) > :is(#kaelWorldEntry,#oracleWorldEntry) {
+  grid-column: span 3;
+}
+#guildWallet .guild-wallet-tools:has(details[open]) {
+  position: relative;
+  grid-template-columns: minmax(0,1fr);
+}
+#guildWallet .guild-wallet-tools:has(details[open]) #merchantWorldEntry {
+  position: absolute;
+  inset: 0 0 auto auto;
+}
+#guildWallet .guild-wallet-details[open] summary { margin-inline-end: 126px; }
